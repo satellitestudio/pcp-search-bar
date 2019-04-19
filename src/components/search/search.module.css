@@ -1,0 +1,12 @@
+.searchContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.optionList {
+  position: absolute;
+  top: 25px;
+  left: 0;
+  right: 0;
+  background-color: antiquewhite;
+}
