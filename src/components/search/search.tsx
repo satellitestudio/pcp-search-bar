@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React from 'react'
 import styles from './search.module.css'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { DataItem } from '../../types/data'
@@ -38,7 +38,7 @@ function XIcon() {
 interface SearchProps {
   isOpen?: boolean
   itemToString(obj: DataItem): string
-  onChange: any
+  onChange(selectedItem: DataItem, downshiftState: DownshiftState<any>): void
   items: DataItem[]
   stateReducer(
     state: DownshiftState<any>,
@@ -47,71 +47,69 @@ interface SearchProps {
   onStateChange(changes: StateChangeOptions<any>, downshiftState: DownshiftState<any>): void
 }
 
-class Search extends Component<SearchProps, any> {
-  render(): React.ReactNode {
-    const { itemToString, onChange, stateReducer, items, onStateChange } = this.props
-    return (
-      <Downshift
-        onChange={onChange}
-        stateReducer={stateReducer}
-        itemToString={itemToString}
-        onStateChange={onStateChange}
-      >
-        {(downshift) => {
-          const {
-            getInputProps,
-            getMenuProps,
-            getToggleButtonProps,
-            getItemProps,
-            isOpen,
-            clearSelection,
-            selectedItem,
-            inputValue,
-            highlightedIndex,
-          } = downshift
-          return (
-            <div className={styles.searchContainer}>
-              <div>
-                <input
-                  {...getInputProps({
-                    placeholder: 'Start searching',
-                  })}
-                />
-                {selectedItem ? (
-                  <button onClick={() => clearSelection()} aria-label="clear selection">
-                    <XIcon />
-                  </button>
-                ) : (
-                  <button {...getToggleButtonProps()}>
-                    <ArrowIcon isOpen={isOpen} />
-                  </button>
-                )}
-              </div>
-              {!isOpen ? null : (
-                <ul className={styles.optionList} {...getMenuProps()}>
-                  {items.map((item: any, index: number) => (
-                    <li
-                      key={item.id}
-                      {...getItemProps({
-                        item,
-                        index,
-                      })}
-                      style={{
-                        backgroundColor: highlightedIndex === index ? '#ccc' : 'transparent',
-                        color: selectedItem === item ? '#0f0f0f' : '#000',
-                      }}
-                    >
-                      {item.type}: {itemToString(item)}
-                    </li>
-                  ))}
-                </ul>
+const Search: React.FC<SearchProps> = (props) => {
+  const { itemToString, onChange, stateReducer, items, onStateChange } = props
+  return (
+    <Downshift
+      onChange={onChange}
+      stateReducer={stateReducer}
+      itemToString={itemToString}
+      onStateChange={onStateChange}
+    >
+      {(downshift) => {
+        const {
+          getInputProps,
+          getMenuProps,
+          getToggleButtonProps,
+          getItemProps,
+          isOpen,
+          clearSelection,
+          selectedItem,
+          inputValue,
+          highlightedIndex,
+        } = downshift
+        return (
+          <div className={styles.searchContainer}>
+            <div>
+              <input
+                {...getInputProps({
+                  placeholder: 'Start searching',
+                })}
+              />
+              {selectedItem ? (
+                <button onClick={() => clearSelection()} aria-label="clear selection">
+                  <XIcon />
+                </button>
+              ) : (
+                <button {...getToggleButtonProps()}>
+                  <ArrowIcon isOpen={isOpen} />
+                </button>
               )}
             </div>
-          )
-        }}
-      </Downshift>
-    )
-  }
+            {!isOpen ? null : (
+              <ul className={styles.optionList} {...getMenuProps()}>
+                {items.map((item: DataItem, index: number) => (
+                  <li
+                    key={item.id}
+                    {...getItemProps({
+                      item,
+                      index,
+                    })}
+                    style={{
+                      backgroundColor: highlightedIndex === index ? '#ccc' : 'transparent',
+                      color: selectedItem === item ? '#0f0f0f' : '#000',
+                    }}
+                  >
+                    {item.type}: {itemToString(item)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )
+      }}
+    </Downshift>
+  )
 }
 
 export default Search

@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { useState } from 'react'
 import matchSorter from 'match-sorter'
 import SearchComponent from './search'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
@@ -6,27 +6,39 @@ import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import data from '../../data/data'
 import { DataItem } from '../../types/data'
 
-interface SearchState {
-  itemsToShow: DataItem[]
-}
+const SearchContainer: React.FC = () => {
+  const items: DataItem[] = data
+  const [itemsFiltered, setItemsFiltered] = useState<DataItem[]>([])
 
-class Search extends Component<any, SearchState> {
-  items: DataItem[] = data
-  state = { itemsToShow: [] }
+  const getItemsToShow = (value: string, selectedItem: DataItem): DataItem[] => {
+    if (!value) return items
 
-  handleStateChange = (changes: StateChangeOptions<any>, downshiftState: DownshiftState<any>) => {
+    const cleanValues = value
+      .replace(/:/gi, ' ')
+      .split(' ')
+      .filter((v) => v && v !== '')
+
+    const cleanItems = selectedItem ? items.filter((i) => i.id !== selectedItem.id) : items
+
+    return cleanValues.reduce((acc, cleanValue) => {
+      return matchSorter(acc, cleanValue, { keys: ['label', 'type'] })
+    }, cleanItems)
+  }
+
+  const handleStateChange = (
+    changes: StateChangeOptions<any>,
+    downshiftState: DownshiftState<any>
+  ) => {
     if (changes.hasOwnProperty('inputValue')) {
       const { inputValue, selectedItem } = downshiftState
-      this.setState({
-        itemsToShow: this.getItemsToShow(inputValue || '', selectedItem),
-      })
+      setItemsFiltered(getItemsToShow(inputValue || '', selectedItem))
     }
   }
 
-  stateReducer(
+  const stateReducer = (
     state: DownshiftState<any>,
     changes: StateChangeOptions<any>
-  ): StateChangeOptions<any> {
+  ): StateChangeOptions<any> => {
     switch (changes.type) {
       case Downshift.stateChangeTypes.keyDownEnter:
       case Downshift.stateChangeTypes.clickItem:
@@ -53,43 +65,23 @@ class Search extends Component<any, SearchState> {
     }
   }
 
-  handleChange = (selectedItem: DataItem, downshiftState: DownshiftState<any>) => {
+  const handleChange = (selectedItem: DataItem, downshiftState: DownshiftState<any>) => {
     console.log('TCL: handleChange -> downshiftState', selectedItem, downshiftState)
   }
 
-  getItemsToShow(value: string, selectedItem: DataItem): DataItem[] {
-    if (!value) return this.items
-
-    const cleanValues = value
-      .replace(/:/gi, ' ')
-      .split(' ')
-      .filter((v) => v && v !== '')
-
-    const cleanItems = selectedItem
-      ? this.items.filter((i) => i.id !== selectedItem.id)
-      : this.items
-
-    return cleanValues.reduce((acc, cleanValue) => {
-      return matchSorter(acc, cleanValue, { keys: ['label', 'type'] })
-    }, cleanItems)
-  }
-
-  itemToString(i: DataItem): string {
+  const itemToString = (i: DataItem): string => {
     return i ? i.label : ''
   }
 
-  render(): React.ReactNode {
-    const { itemsToShow } = this.state
-    return (
-      <SearchComponent
-        items={itemsToShow}
-        onChange={this.handleChange}
-        itemToString={this.itemToString}
-        stateReducer={this.stateReducer}
-        onStateChange={this.handleStateChange}
-      />
-    )
-  }
+  return (
+    <SearchComponent
+      items={itemsFiltered}
+      onChange={handleChange}
+      itemToString={itemToString}
+      stateReducer={stateReducer}
+      onStateChange={handleStateChange}
+    />
+  )
 }
 
-export default Search
+export default SearchContainer
