@@ -1,28 +1,75 @@
 import React, { useState } from 'react'
 import matchSorter from 'match-sorter'
 import SearchComponent from './search'
+import { DataValue, DataSelection, DataSelectionGrouped } from './search.types'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 
 import data from '../../data/data'
 import { DataItem } from '../../types/data'
 
+// Hack to look like spaces but be able to identify between input spaces and label spaces
+const breakingSpaceCharacter = '\u00a0'
+const breakingSpaceRegex = new RegExp(breakingSpaceCharacter, 'g')
+const replaceWithBreakingSpaces = (string: string) => string.replace(/\s/gi, breakingSpaceCharacter)
+const replaceWithNormalSpaces = (string: string) => string.replace(breakingSpaceRegex, ' ')
+
 const SearchContainer: React.FC = () => {
   const items: DataItem[] = data
+  let cursorPosition = 0
   const [itemsFiltered, setItemsFiltered] = useState<DataItem[]>([])
 
-  const getItemsToShow = (value: string, selectedItem: DataItem): DataItem[] => {
-    if (!value) return items
+  const getItemsToShow = (
+    input: string,
+    selectedItems: DataItem[],
+    cursorPosition: number
+  ): DataItem[] => {
+    if (!input) return items
+    let selectedItemIds = (selectedItems && selectedItems.map((i) => i.id)) || []
+    const selectedItemTypes = (selectedItems && selectedItems.map((i) => i.type)) || []
+    const selectedItemLabels = (selectedItems && selectedItems.map((i) => i.label)) || []
+    const existingSearchTypes: { [type: string]: boolean } = {}
 
-    const cleanValues = value
+    const cleanValues = input
       .replace(/:/gi, ' ')
+      .replace(/,/gi, ' ')
       .split(' ')
-      .filter((v) => v && v !== '')
+      // Space replacement needs to be done after splitting by regular spaces
+      .map(replaceWithNormalSpaces)
+      .filter((v) => {
+        if (!v || v === '') return false
+        if (selectedItemTypes.includes(v)) {
+          // Needed when search by type with a current type filter added
+          if (!existingSearchTypes[v]) {
+            existingSearchTypes[v] = true
+            return false
+          } else {
+            return true
+          }
+        }
+        return !selectedItemLabels.includes(v)
+      })
+    const isLastSpace = input[cursorPosition] === ' '
+    if (!isLastSpace) {
+      let currentTypeEndIndex = 0
+      let currentTypeStartIndex = 0
+      for (let i = cursorPosition; i > 0; i--) {
+        if (input[i] === ':') {
+          currentTypeEndIndex = i
+        } else if (input[i] === ' ') {
+          currentTypeStartIndex = i + 1
+          break
+        }
+      }
+      const currentType = input.slice(currentTypeStartIndex, currentTypeEndIndex)
+      cleanValues.push(currentType)
+    }
 
-    const cleanItems = selectedItem ? items.filter((i) => i.id !== selectedItem.id) : items
+    const itemsNotSelected =
+      selectedItemIds.length > 0 ? items.filter((i) => !selectedItemIds.includes(i.id)) : items
 
     return cleanValues.reduce((acc, cleanValue) => {
       return matchSorter(acc, cleanValue, { keys: ['label', 'type'] })
-    }, cleanItems)
+    }, itemsNotSelected)
   }
 
   const handleStateChange = (
@@ -31,33 +78,111 @@ const SearchContainer: React.FC = () => {
   ) => {
     if (changes.hasOwnProperty('inputValue')) {
       const { inputValue, selectedItem } = downshiftState
-      setItemsFiltered(getItemsToShow(inputValue || '', selectedItem))
+      setItemsFiltered(getItemsToShow(inputValue || '', selectedItem, cursorPosition))
     }
   }
 
-  const stateReducer = (
-    state: DownshiftState<any>,
-    changes: StateChangeOptions<any>
-  ): StateChangeOptions<any> => {
+  const groupSelectionsByType = (selections: DataItem[]): DataSelectionGrouped => {
+    return selections.reduce((acc: DataSelectionGrouped, selection: DataItem) => {
+      const { type, id, label } = selection
+      const existingType = acc[type]
+      if (existingType) {
+        acc[type].values.push({ id, label })
+        return acc
+      }
+      return {
+        ...acc,
+        [type]: { type, values: [{ id, label }] },
+      }
+    }, {})
+  }
+
+  const parseSelectionToInput = (selections: DataSelectionGrouped) => {
+    return Object.values(selections).reduce(
+      (acc: string, item: DataSelection) =>
+        `${acc}${item.type}:${item.values
+          .map((v: DataValue) => replaceWithBreakingSpaces(v.label))
+          .join(',')} `,
+      ''
+    )
+  }
+
+  const stateReducer = (state: DownshiftState<any>, changes: StateChangeOptions<any>): any => {
     switch (changes.type) {
       case Downshift.stateChangeTypes.keyDownEnter:
-      case Downshift.stateChangeTypes.clickItem:
-        return {
-          ...changes,
-          inputValue: `${changes.selectedItem.type}:${changes.selectedItem.label} `,
-        }
-      case Downshift.stateChangeTypes.changeInput: {
-        const isRemoving =
-          state.inputValue &&
-          changes.inputValue &&
-          state.inputValue.trim().length > changes.inputValue.trim().length
-        let selectedItem = changes.inputValue ? state.selectedItem : null
-        if (isRemoving) {
-          selectedItem = null
-        }
+      case Downshift.stateChangeTypes.clickItem: {
+        const currentItems = state.selectedItem || []
+        const alreadySelected = currentItems.find(
+          (item: any) => item.id === changes.selectedItem.id
+        )
+        const selectedItem = alreadySelected
+          ? currentItems
+          : [...currentItems, changes.selectedItem]
+        const groupedSelections = groupSelectionsByType(selectedItem)
+        const inputValue = parseSelectionToInput(groupedSelections)
         return {
           ...changes,
           selectedItem,
+          inputValue,
+        }
+      }
+      case Downshift.stateChangeTypes.changeInput: {
+        cursorPosition = 0
+        if (changes.inputValue && state.inputValue) {
+          const length = Math.max(state.inputValue.length, changes.inputValue.length)
+          for (let i = 0; i < length; i++) {
+            if (changes.inputValue[i] === undefined) {
+              cursorPosition -= 1
+            } else if (state.inputValue[i] === changes.inputValue[i]) {
+              cursorPosition += 1
+            }
+          }
+        }
+        const inputValuesParsed = changes.inputValue
+          ? changes.inputValue
+              .split(' ')
+              .filter((s) => s)
+              .map((s) => {
+                const [type, labels] = s.split(':')
+                return { type, labels: labels && labels.split(',').map(replaceWithNormalSpaces) }
+              })
+          : null
+
+        let selectedItem =
+          inputValuesParsed !== null && items !== null
+            ? items.filter(
+                (i: DataItem) =>
+                  inputValuesParsed.find(
+                    (p) => p.type === i.type && p.labels !== undefined && p.labels.includes(i.label)
+                  ) !== undefined
+              )
+            : []
+
+        if (changes.inputValue) {
+          // Remove from current when cursor is in last character to suggest
+          let currentLabelEndIndex = cursorPosition + 1
+          let currentLabelStartIndex = 0
+          for (let i = cursorPosition; i > 0; i--) {
+            if (changes.inputValue[i] === ':' || changes.inputValue[i] === ',') {
+              currentLabelStartIndex = i + 1
+              break
+            }
+          }
+          const currentLabel = replaceWithNormalSpaces(
+            changes.inputValue.slice(currentLabelStartIndex, currentLabelEndIndex)
+          )
+          const currentSelection = selectedItem.find((i) => i.label === currentLabel)
+          if (currentSelection) {
+            selectedItem = selectedItem.filter((item) => item.id !== currentSelection.id)
+          }
+        }
+        const isLastSpace =
+          changes.inputValue && changes.inputValue[changes.inputValue.length - 1] === ' '
+
+        return {
+          ...changes,
+          selectedItem,
+          isOpen: !isLastSpace,
         }
       }
       default:
@@ -65,8 +190,8 @@ const SearchContainer: React.FC = () => {
     }
   }
 
-  const handleChange = (selectedItem: DataItem, downshiftState: DownshiftState<any>) => {
-    console.log('TCL: handleChange -> downshiftState', selectedItem, downshiftState)
+  const handleChange = (selectedItems: DataItem[]) => {
+    console.table(selectedItems)
   }
 
   const itemToString = (i: DataItem): string => {
