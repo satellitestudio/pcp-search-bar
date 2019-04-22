@@ -1,6 +1,10 @@
 .searchContainer {
   position: relative;
-  display: inline-block;
+}
+
+.searchInput {
+  width: 100%;
+  display: block;
 }
 
 .optionList {
