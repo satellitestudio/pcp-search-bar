@@ -1,10 +1,26 @@
 export default [
   {
-    id: 'rfmo1',
-    label: 'IATC',
+    id: 'ICCAT',
+    label: 'ICCAT',
   },
   {
-    id: 'rfmo2',
-    label: 'OITCS',
+    id: 'IOTC',
+    label: 'IOTC',
+  },
+  {
+    id: 'WCPFC',
+    label: 'WCPFC',
+  },
+  {
+    id: 'IATTC',
+    label: 'IATTC',
+  },
+  {
+    id: 'AIDCP',
+    label: 'AIDCP',
+  },
+  {
+    id: 'CCSBT',
+    label: 'CCSBT',
   },
 ]
