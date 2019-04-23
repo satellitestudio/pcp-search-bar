@@ -4,10 +4,9 @@ import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { DataItem } from '../../types/data'
 
 interface SearchProps {
-  isOpen?: boolean
+  items: DataItem[]
   itemToString(obj: DataItem): string
   onChange(selectedItems: DataItem[], downshiftState: DownshiftState<any>): void
-  items: DataItem[]
   stateReducer(
     state: DownshiftState<any>,
     changes: StateChangeOptions<any>
