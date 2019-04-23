@@ -39,15 +39,21 @@ const parseSelectionToInput = (selections: DataSelectionGrouped) => {
   )
 }
 
-const SearchContainer: React.FC = () => {
+interface SearchContainerProps {
+  initialSearch: string
+  onChange(selectedItems: DataItem[], inputValue: string): void
+}
+
+const SearchContainer: React.FC<SearchContainerProps> = (props) => {
   let cursorPosition = 0
-  const [state, dispatch] = useResultsFiltered(data, '')
+  const [state, dispatch] = useResultsFiltered(data, props.initialSearch)
   const { results, loading } = state
 
   const handleStateChange = useCallback(
     (changes: StateChangeOptions<any>, downshiftState: DownshiftState<any>) => {
       if (changes.hasOwnProperty('inputValue')) {
         const { inputValue, selectedItem } = downshiftState
+        props.onChange(selectedItem, inputValue || '')
         if (inputValue) {
           dispatch({
             type: 'inputChange',
@@ -71,11 +77,7 @@ const SearchContainer: React.FC = () => {
     const groupedSelections = groupSelectionsByType(selectedItem)
     // Adding a space at the end to start with a clean search when press enter
     const inputValue = parseSelectionToInput(groupedSelections)
-    return {
-      ...changes,
-      selectedItem,
-      inputValue,
-    }
+    return { ...changes, selectedItem, inputValue }
   }
 
   const parseInputToFields = (input: string): { type: string; labels: string[] }[] => {
@@ -191,11 +193,6 @@ const SearchContainer: React.FC = () => {
     [results]
   )
 
-  const handleChange = useCallback((selectedItems: DataItem[]) => {
-    console.log('SELECTED ITEMS CALLBACK')
-    console.table(selectedItems)
-  }, [])
-
   const itemToString = useCallback((i: DataItem): string => {
     return i ? i.label : ''
   }, [])
@@ -204,10 +201,10 @@ const SearchContainer: React.FC = () => {
     <SearchComponent
       items={results}
       loading={loading}
-      onChange={handleChange}
-      onKeyDown={customKeyDownHandler}
       itemToString={itemToString}
       stateReducer={stateReducer}
+      initialInputValue={props.initialSearch}
+      onKeyDown={customKeyDownHandler}
       onStateChange={handleStateChange}
     />
   )

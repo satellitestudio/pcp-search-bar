@@ -7,8 +7,9 @@ import { DataItem } from '../../types/data'
 interface SearchProps {
   items: DataItem[]
   loading?: boolean
+  initialInputValue: string
   itemToString(obj: DataItem): string
-  onChange(selectedItems: DataItem[], downshiftState: DownshiftState<any>): void
+  onChange?(selectedItems: DataItem[], downshiftState: DownshiftState<any>): void
   onKeyDown?(event: React.KeyboardEvent<HTMLInputElement>, downshiftState: any): void
   stateReducer(
     state: DownshiftState<any>,
@@ -18,10 +19,20 @@ interface SearchProps {
 }
 
 const Search: React.FC<SearchProps> = (props) => {
-  const { itemToString, onChange, onKeyDown, stateReducer, items, onStateChange, loading } = props
+  const {
+    itemToString,
+    initialInputValue,
+    onChange,
+    onKeyDown,
+    stateReducer,
+    items,
+    onStateChange,
+    loading,
+  } = props
   return (
     <Downshift
       onChange={onChange}
+      initialInputValue={initialInputValue}
       stateReducer={stateReducer}
       itemToString={itemToString}
       onStateChange={onStateChange}
