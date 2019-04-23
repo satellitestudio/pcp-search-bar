@@ -25,7 +25,7 @@ const getItemsFiltered = (
   const selectedItemLabels = (selectedItems && selectedItems.map((i) => i.label)) || []
   const existingSearchTypes: { [type: string]: boolean } = {}
 
-  const cleanValues = input
+  const searchStrings = input
     .replace(/:/gi, ' ')
     .replace(/,/gi, ' ')
     .split(' ')
@@ -57,13 +57,13 @@ const getItemsFiltered = (
       }
     }
     const currentType = input.slice(currentTypeStartIndex, currentTypeEndIndex)
-    cleanValues.push(currentType)
+    searchStrings.push(currentType)
   }
 
   const itemsNotSelected =
     selectedItemIds.length > 0 ? items.filter((i) => !selectedItemIds.includes(i.id)) : items
 
-  return cleanValues.reduce((acc, cleanValue) => {
+  return searchStrings.reduce((acc, cleanValue) => {
     return matchSorter(acc, cleanValue, { keys: ['label', 'type'] })
   }, itemsNotSelected)
 }
@@ -204,6 +204,12 @@ const SearchContainer: React.FC = () => {
         }
         case Downshift.stateChangeTypes.changeInput: {
           return handleChangeInput(state, changes)
+        }
+        case Downshift.stateChangeTypes.mouseUp: {
+          return {
+            ...changes,
+            inputValue: state.inputValue,
+          }
         }
         default:
           return changes
