@@ -1,21 +1,22 @@
 import { useEffect, useReducer } from 'react'
 import matchSorter from 'match-sorter'
 import { DataItem } from '../../types/data'
+import { VesselAPIEntry, VesselAPIResult } from '../../types/api'
 import { replaceWithNormalSpaces } from './search.container'
 
-const getItemsFiltered = (
-  items: DataItem[],
+const searchTypes = ['flag', 'rfmo', 'vessel']
+const asyncFields = ['vessel']
+
+const parseSearchFieldsInput = (
   input: string,
   selectedItems: DataItem[],
   cursorPosition: number
-): DataItem[] => {
-  if (!input) return items
-  let selectedItemIds = (selectedItems && selectedItems.map((i) => i.id)) || []
+) => {
   const selectedItemTypes = (selectedItems && selectedItems.map((i) => i.type)) || []
   const selectedItemLabels = (selectedItems && selectedItems.map((i) => i.label)) || []
   const existingSearchTypes: { [type: string]: boolean } = {}
 
-  const searchStrings = input
+  const searchFields = input
     .replace(/:/gi, ' ')
     .replace(/,/gi, ' ')
     .split(' ')
@@ -47,24 +48,47 @@ const getItemsFiltered = (
       }
     }
     const currentType = input.slice(currentTypeStartIndex, currentTypeEndIndex)
-    searchStrings.push(currentType)
+    if (currentType) {
+      searchFields.push(currentType)
+    }
   }
+  return searchFields
+}
 
+const getItemsFiltered = (
+  items: DataItem[],
+  input: string,
+  selectedItems: DataItem[],
+  cursorPosition: number
+): DataItem[] => {
+  if (!input) return items
+  let selectedItemIds = (selectedItems && selectedItems.map((i) => i.id)) || []
+
+  const searchFields = parseSearchFieldsInput(input, selectedItems, cursorPosition)
   const itemsNotSelected =
     selectedItemIds.length > 0 ? items.filter((i) => !selectedItemIds.includes(i.id)) : items
 
-  return searchStrings.reduce((acc, cleanValue) => {
+  return searchFields.reduce((acc, cleanValue) => {
     return matchSorter(acc, cleanValue, { keys: ['label', 'type'] })
   }, itemsNotSelected)
 }
 
+interface ResultsInitialState {
+  loading: boolean
+  staticData: DataItem[]
+  selectedItem: DataItem[]
+  cursorPosition: number
+  search: string
+  results: DataItem[]
+}
+
 export const useResultsFiltered = (staticData: DataItem[], initialValue?: string): any => {
-  const initialState = {
+  const initialState: ResultsInitialState = {
     loading: false,
     staticData,
     selectedItem: [],
     cursorPosition: 0,
-    search: initialValue,
+    search: initialValue || '',
     results: staticData,
   }
   const [state, dispatch] = useReducer((state, action) => {
@@ -90,15 +114,18 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
         return state
     }
   }, initialState)
-  const { search, selectedItem } = state
+  const { search, selectedItem, cursorPosition } = state
   useEffect(() => {
-    dispatch({ type: 'startSearch', payload: { search, selectedItem } })
+    dispatch({ type: 'startSearch' })
 
-    // TODO clean search input and get only vessels or search terms
-    const searchQuery = search
-    if (searchQuery) {
+    const searchFields = parseSearchFieldsInput(search, selectedItem, cursorPosition)
+    const searchFieldsTypes = searchFields.filter((f) => searchTypes.includes(f))
+    const needsRequest =
+      searchFieldsTypes.length === 0 || searchFieldsTypes.some((r) => asyncFields.includes(r))
+    if (needsRequest) {
+      const searchQuery = searchFields.filter((f) => !searchTypes.includes(f)).join(',')
       const controller = new AbortController()
-      const searchUrl = `https://vessels-dot-world-fishing-827.appspot.com/datasets/indonesia/vessels?query=${search}&offset=0`
+      const searchUrl = `https://vessels-dot-world-fishing-827.appspot.com/datasets/indonesia/vessels?query=${searchQuery}&offset=0`
 
       fetch(searchUrl, { signal: controller.signal })
         .then((response) =>
@@ -107,10 +134,10 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
             : Promise.reject(new Error(response.statusText))
         )
         .then((response) => response.json())
-        .then((data) => {
+        .then((data: VesselAPIResult) => {
           const apiResults = data.entries
-            .filter((d: any) => d.name)
-            .map((d: any) => ({ id: d.vesselId, label: d.name, type: 'vessel' }))
+            .filter((d: VesselAPIEntry) => d.name)
+            .map((d: VesselAPIEntry) => ({ id: d.vesselId, label: d.name, type: 'vessel' }))
           dispatch({ type: 'endSearch', payload: apiResults })
         })
         .catch((err) => {

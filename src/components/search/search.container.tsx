@@ -50,7 +50,7 @@ const SearchContainer: React.FC = () => {
         if (inputValue !== null) {
           dispatch({
             type: 'inputChange',
-            payload: { search: inputValue, selectedItem, cursorPosition },
+            payload: { search: inputValue || '', selectedItem, cursorPosition },
           })
         }
       }
