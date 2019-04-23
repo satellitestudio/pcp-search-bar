@@ -45,14 +45,10 @@ const Search: React.FC<SearchProps> = (props) => {
                   placeholder: 'Start searching',
                   onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
                     const hasValue = inputValue !== '' && inputValue !== ' '
-                    const isLastSpace =
-                      inputValue !== null && inputValue[inputValue.length - 1] === ' '
-                    if (
-                      isOpen &&
-                      hasValue &&
-                      !isLastSpace &&
-                      (event.key === ' ' || event.key === ',')
-                    ) {
+                    const isSpace = event.key === ' '
+                    const isComma = event.key === ','
+                    const hasMoreOptions = items.length > 1
+                    if (isOpen && hasValue && ((isSpace || isComma) && !hasMoreOptions)) {
                       ;(event as any).nativeEvent.preventDownshiftDefault = true
                       if (highlightedIndex !== null) {
                         const selectedItem = items[highlightedIndex]

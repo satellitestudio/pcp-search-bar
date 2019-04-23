@@ -129,14 +129,8 @@ const SearchContainer: React.FC = () => {
         selectedItem = selectedItem.filter((item: DataItem) => item.id !== currentSelection.id)
       }
     }
-    const isLastSpace =
-      changes.inputValue && changes.inputValue[changes.inputValue.length - 1] === ' '
 
-    return {
-      ...changes,
-      selectedItem,
-      isOpen: !isLastSpace,
-    }
+    return { ...changes, selectedItem }
   }
 
   const stateReducer = useCallback(
