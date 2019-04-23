@@ -32,9 +32,9 @@ const groupSelectionsByType = (selections: DataItem[]): DataSelectionGrouped => 
 const parseSelectionToInput = (selections: DataSelectionGrouped) => {
   return Object.values(selections).reduce(
     (acc: string, item: DataSelection) =>
-      `${acc}${item.type}:${item.values
+      `${acc !== '' ? `${acc} ` : ''}${item.type}:${item.values
         .map((v: DataValue) => replaceWithBreakingSpaces(v.label))
-        .join(',')} `,
+        .join(',')}`,
     ''
   )
 }
@@ -152,7 +152,7 @@ const SearchContainer: React.FC = () => {
         case Downshift.stateChangeTypes.mouseUp: {
           return {
             ...changes,
-            inputValue: state.inputValue,
+            inputValue: state.inputValue || '',
           }
         }
         default:

@@ -31,6 +31,8 @@ const Search: React.FC<SearchProps> = (props) => {
           getMenuProps,
           getItemProps,
           isOpen,
+          setState,
+          inputValue,
           selectedItem,
           highlightedIndex,
         } = downshift
@@ -41,6 +43,29 @@ const Search: React.FC<SearchProps> = (props) => {
                 className={styles.searchInput}
                 {...getInputProps({
                   placeholder: 'Start searching',
+                  onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
+                    const hasValue = inputValue !== '' && inputValue !== ' '
+                    const isLastSpace =
+                      inputValue !== null && inputValue[inputValue.length - 1] === ' '
+                    if (
+                      isOpen &&
+                      hasValue &&
+                      !isLastSpace &&
+                      (event.key === ' ' || event.key === ',')
+                    ) {
+                      ;(event as any).nativeEvent.preventDownshiftDefault = true
+                      if (highlightedIndex !== null) {
+                        const selectedItem = items[highlightedIndex]
+                        if (selectedItem !== undefined) {
+                          setState({
+                            type: Downshift.stateChangeTypes.clickItem,
+                            selectedItem,
+                            inputValue,
+                          })
+                        }
+                      }
+                    }
+                  },
                 })}
               />
             </div>

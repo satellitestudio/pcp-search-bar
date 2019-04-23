@@ -123,7 +123,10 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
     const needsRequest =
       searchFieldsTypes.length === 0 || searchFieldsTypes.some((r) => asyncFields.includes(r))
     if (needsRequest) {
-      const searchQuery = searchFields.filter((f) => !searchTypes.includes(f)).join(',')
+      const selectedItemLabels = selectedItem.map((i: DataItem) => i.label)
+      const searchQuery = searchFields
+        .filter((f) => !selectedItemLabels.includes(f) && !searchTypes.includes(f))
+        .join(',')
       const controller = new AbortController()
       const searchUrl = `https://vessels-dot-world-fishing-827.appspot.com/datasets/indonesia/vessels?query=${searchQuery}&offset=0`
 
