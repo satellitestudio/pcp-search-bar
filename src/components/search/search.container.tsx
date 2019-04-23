@@ -147,16 +147,33 @@ const SearchContainer: React.FC = () => {
           return {
             ...changes,
             inputValue: state.inputValue || '',
+
+  const customKeyDownHandler = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>, downshift: any) => {
+      const { highlightedIndex, inputValue, setState } = downshift
+      const hasValue = inputValue !== '' && inputValue !== ' '
+      const isSpace = event.key === ' '
+      const isComma = event.key === ','
+      const hasOneOptions = results.length === 1
+      if (hasValue && ((isSpace || isComma) && hasOneOptions)) {
+        ;(event as any).nativeEvent.preventDownshiftDefault = true
+        if (highlightedIndex !== null && highlightedIndex >= 0) {
+          const selectedItem = results[highlightedIndex]
+          if (selectedItem) {
+            setState({
+              type: Downshift.stateChangeTypes.clickItem,
+              selectedItem,
+              inputValue,
+            })
           }
         }
-        default:
-          return changes
       }
     },
-    []
+    [results]
   )
 
   const handleChange = useCallback((selectedItems: DataItem[]) => {
+    console.log('SELECTED ITEMS CALLBACK')
     console.table(selectedItems)
   }, [])
 
@@ -169,6 +186,7 @@ const SearchContainer: React.FC = () => {
       items={results}
       loading={loading}
       onChange={handleChange}
+      onKeyDown={customKeyDownHandler}
       itemToString={itemToString}
       stateReducer={stateReducer}
       onStateChange={handleStateChange}

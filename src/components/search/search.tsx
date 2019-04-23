@@ -8,6 +8,7 @@ interface SearchProps {
   loading?: boolean
   itemToString(obj: DataItem): string
   onChange(selectedItems: DataItem[], downshiftState: DownshiftState<any>): void
+  onKeyDown?(event: React.KeyboardEvent<HTMLInputElement>, downshiftState: any): void
   stateReducer(
     state: DownshiftState<any>,
     changes: StateChangeOptions<any>
@@ -16,7 +17,7 @@ interface SearchProps {
 }
 
 const Search: React.FC<SearchProps> = (props) => {
-  const { itemToString, onChange, stateReducer, items, onStateChange, loading } = props
+  const { itemToString, onChange, onKeyDown, stateReducer, items, onStateChange, loading } = props
   return (
     <Downshift
       onChange={onChange}
@@ -31,8 +32,6 @@ const Search: React.FC<SearchProps> = (props) => {
           getMenuProps,
           getItemProps,
           isOpen,
-          setState,
-          inputValue,
           selectedItem,
           highlightedIndex,
         } = downshift
@@ -43,25 +42,8 @@ const Search: React.FC<SearchProps> = (props) => {
                 className={styles.searchInput}
                 {...getInputProps({
                   placeholder: 'Start searching',
-                  onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
-                    const hasValue = inputValue !== '' && inputValue !== ' '
-                    const isSpace = event.key === ' '
-                    const isComma = event.key === ','
-                    const hasMoreOptions = items.length > 1
-                    if (isOpen && hasValue && ((isSpace || isComma) && !hasMoreOptions)) {
-                      ;(event as any).nativeEvent.preventDownshiftDefault = true
-                      if (highlightedIndex !== null) {
-                        const selectedItem = items[highlightedIndex]
-                        if (selectedItem !== undefined) {
-                          setState({
-                            type: Downshift.stateChangeTypes.clickItem,
-                            selectedItem,
-                            inputValue,
-                          })
-                        }
-                      }
-                    }
-                  },
+                  onKeyDown:
+                    onKeyDown !== undefined ? (event) => onKeyDown(event, downshift) : undefined,
                 })}
               />
             </div>
