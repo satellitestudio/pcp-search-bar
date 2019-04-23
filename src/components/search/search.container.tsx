@@ -29,12 +29,13 @@ const groupSelectionsByType = (selections: DataItem[]): DataSelectionGrouped => 
   }, {})
 }
 
-const parseSelectionToInput = (selections: DataSelectionGrouped) => {
+const parseSelectionToInput = (selections: DataSelectionGrouped, lastCharacter: string = ' ') => {
+  const selectionsLength = Object.values(selections).length - 1
   return Object.values(selections).reduce(
-    (acc: string, item: DataSelection) =>
+    (acc: string, item: DataSelection, index: number) =>
       `${acc !== '' ? `${acc} ` : ''}${item.type}:${item.values
         .map((v: DataValue) => replaceWithBreakingSpaces(v.label))
-        .join(',')}`,
+        .join(',')}${index === selectionsLength ? lastCharacter : ''}`,
     ''
   )
 }
@@ -50,15 +51,18 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
   const { results, loading } = state
 
   const handleStateChange = useCallback(
-    (changes: StateChangeOptions<any>, downshiftState: DownshiftState<any>) => {
+    (changes: StateChangeOptions<DataItem[]>, downshiftState: DownshiftState<DataItem[]>) => {
       if (changes.hasOwnProperty('inputValue')) {
-        const { inputValue, selectedItem } = downshiftState
-        props.onChange(selectedItem, inputValue || '')
-        if (inputValue) {
-          dispatch({
-            type: 'inputChange',
-            payload: { search: inputValue || '', selectedItem, cursorPosition },
-          })
+        const { inputValue = '', selectedItem } = downshiftState
+        const inputValueString = inputValue || ''
+        if (selectedItem !== null) {
+          props.onChange(selectedItem, inputValueString)
+          if (inputValue) {
+            dispatch({
+              type: 'inputChange',
+              payload: { search: inputValueString, selectedItem, cursorPosition },
+            })
+          }
         }
       }
     },
@@ -67,7 +71,8 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
 
   const handleConfirmSelection = (
     state: DownshiftState<any>,
-    changes: StateChangeOptions<any>
+    changes: StateChangeOptions<any>,
+    lastCharacter: string = ' '
   ): StateChangeOptions<any> => {
     const currentItems = state.selectedItem || []
     const alreadySelected = currentItems.find(
@@ -76,7 +81,7 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
     const selectedItem = alreadySelected ? currentItems : [...currentItems, changes.selectedItem]
     const groupedSelections = groupSelectionsByType(selectedItem)
     // Adding a space at the end to start with a clean search when press enter
-    const inputValue = parseSelectionToInput(groupedSelections)
+    const inputValue = parseSelectionToInput(groupedSelections, lastCharacter)
     return { ...changes, selectedItem, inputValue }
   }
 
@@ -111,9 +116,9 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
   }
 
   const handleChangeInput = (
-    state: DownshiftState<any>,
-    changes: StateChangeOptions<any>
-  ): StateChangeOptions<any> => {
+    state: DownshiftState<DataItem[]>,
+    changes: StateChangeOptions<DataItem[]>
+  ): StateChangeOptions<DataItem[]> => {
     cursorPosition = 0
     if (changes.inputValue && state.inputValue) {
       const length = Math.max(state.inputValue.length, changes.inputValue.length)
@@ -152,11 +157,17 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
   }
 
   const stateReducer = useCallback(
-    (state: DownshiftState<any>, changes: StateChangeOptions<any>): StateChangeOptions<any> => {
-      switch (changes.type) {
+    (
+      state: DownshiftState<DataItem[]>,
+      changes: StateChangeOptions<DataItem[]>
+    ): StateChangeOptions<DataItem[]> => {
+      switch (changes.type as any) {
         case Downshift.stateChangeTypes.keyDownEnter:
         case Downshift.stateChangeTypes.clickItem: {
           return handleConfirmSelection(state, changes)
+        }
+        case 'keyDownComa': {
+          return handleConfirmSelection(state, changes, '')
         }
         case Downshift.stateChangeTypes.changeInput: {
           return handleChangeInput(state, changes)
@@ -182,7 +193,7 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
           const selectedItem = results[highlightedIndex]
           if (selectedItem) {
             setState({
-              type: Downshift.stateChangeTypes.clickItem,
+              type: 'keyDownComa',
               selectedItem,
               inputValue,
             })

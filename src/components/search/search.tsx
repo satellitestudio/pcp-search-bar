@@ -9,13 +9,19 @@ interface SearchProps {
   loading?: boolean
   initialInputValue: string
   itemToString(obj: DataItem): string
-  onChange?(selectedItems: DataItem[], downshiftState: DownshiftState<any>): void
-  onKeyDown?(event: React.KeyboardEvent<HTMLInputElement>, downshiftState: any): void
+  onChange?(selectedItems: DataItem[], downshiftState: any): void
+  onKeyDown?(
+    event: React.KeyboardEvent<HTMLInputElement>,
+    downshiftState: DownshiftState<DataItem[]>
+  ): void
   stateReducer(
-    state: DownshiftState<any>,
-    changes: StateChangeOptions<any>
-  ): StateChangeOptions<any>
-  onStateChange(changes: StateChangeOptions<any>, downshiftState: DownshiftState<any>): void
+    state: DownshiftState<DataItem[]>,
+    changes: StateChangeOptions<DataItem[]>
+  ): StateChangeOptions<DataItem[]>
+  onStateChange(
+    changes: StateChangeOptions<DataItem[]>,
+    downshiftState: DownshiftState<DataItem[]>
+  ): void
 }
 
 const Search: React.FC<SearchProps> = (props) => {
