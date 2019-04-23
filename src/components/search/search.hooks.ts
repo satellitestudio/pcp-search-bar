@@ -4,8 +4,8 @@ import { DataItem } from '../../types/data'
 import { VesselAPIEntry, VesselAPIResult } from '../../types/api'
 import { replaceWithNormalSpaces } from './search.container'
 
-const searchTypes = ['flag', 'rfmo', 'vessel']
-const asyncFields = ['vessel']
+export const searchTypes = ['flag', 'rfmo', 'vessel']
+export const asyncFields = ['vessel']
 
 const parseSearchFieldsInput = (
   input: string,
@@ -73,7 +73,12 @@ const getItemsFiltered = (
   }, itemsNotSelected)
 }
 
-interface ResultsInitialState {
+interface ResultsAction {
+  type: 'inputChange' | 'startSearch' | 'endSearch' | 'setLoading'
+  payload?: any
+}
+
+interface ResultsState {
   loading: boolean
   staticData: DataItem[]
   selectedItem: DataItem[]
@@ -83,7 +88,7 @@ interface ResultsInitialState {
 }
 
 export const useResultsFiltered = (staticData: DataItem[], initialValue?: string): any => {
-  const initialState: ResultsInitialState = {
+  const initialState: ResultsState = {
     loading: false,
     staticData,
     selectedItem: [],
@@ -91,7 +96,7 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
     search: initialValue || '',
     results: staticData,
   }
-  const [state, dispatch] = useReducer((state, action) => {
+  const resultsReducer = (state: ResultsState, action: ResultsAction): ResultsState => {
     switch (action.type) {
       case 'inputChange':
         return { ...state, ...action.payload }
@@ -100,8 +105,11 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
         return {
           ...state,
           results: getItemsFiltered(staticData, search, selectedItem, cursorPosition),
-          loading: true,
+          loading: action.payload,
         }
+      }
+      case 'setLoading': {
+        return { ...state, loading: action.payload }
       }
       case 'endSearch': {
         return {
@@ -113,20 +121,22 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
       default:
         return state
     }
-  }, initialState)
+  }
+  const [state, dispatch] = useReducer(resultsReducer, initialState)
   const { search, selectedItem, cursorPosition } = state
   useEffect(() => {
-    dispatch({ type: 'startSearch' })
-
     const searchFields = parseSearchFieldsInput(search, selectedItem, cursorPosition)
     const searchFieldsTypes = searchFields.filter((f) => searchTypes.includes(f))
     const needsRequest =
       searchFieldsTypes.length === 0 || searchFieldsTypes.some((r) => asyncFields.includes(r))
-    if (needsRequest) {
-      const selectedItemLabels = selectedItem.map((i: DataItem) => i.label)
-      const searchQuery = searchFields
-        .filter((f) => !selectedItemLabels.includes(f) && !searchTypes.includes(f))
-        .join(',')
+    const selectedItemIds = selectedItem.map((i: DataItem) => i.id)
+    const selectedItemLabels = selectedItem.map((i: DataItem) => i.label)
+    const searchQuery = searchFields
+      .filter((f) => !selectedItemLabels.includes(f) && !searchTypes.includes(f))
+      .join(',')
+    const asyncNeeded = needsRequest && searchQuery !== ''
+    dispatch({ type: 'startSearch', payload: asyncNeeded })
+    if (asyncNeeded) {
       const controller = new AbortController()
       const searchUrl = `https://vessels-dot-world-fishing-827.appspot.com/datasets/indonesia/vessels?query=${searchQuery}&offset=0`
 
@@ -141,19 +151,16 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
           const apiResults = data.entries
             .filter((d: VesselAPIEntry) => d.name)
             .map((d: VesselAPIEntry) => ({ id: d.vesselId, label: d.name, type: 'vessel' }))
+            .filter((d: DataItem) => !selectedItemIds.includes(d.id))
           dispatch({ type: 'endSearch', payload: apiResults })
         })
         .catch((err) => {
-          if (err.name === 'AbortError') {
-            console.log('Fetch aborted')
-          } else {
+          if (err.name !== 'AbortError') {
             console.error('Oops!', err)
           }
           dispatch({ type: 'endSearch', payload: [] })
         })
       return () => controller.abort()
-    } else {
-      dispatch({ type: 'endSearch', payload: [] })
     }
   }, [search, selectedItem])
   return [state, dispatch]

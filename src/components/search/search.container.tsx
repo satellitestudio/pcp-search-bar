@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 import SearchComponent from './search'
 import { DataValue, DataSelection, DataSelectionGrouped } from './search.types'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
-import { useResultsFiltered } from './search.hooks'
+import { useResultsFiltered, asyncFields } from './search.hooks'
 
 import data from '../../data/data'
 import { DataItem } from '../../types/data'
@@ -41,13 +41,14 @@ const parseSelectionToInput = (selections: DataSelectionGrouped) => {
 
 const SearchContainer: React.FC = () => {
   let cursorPosition = 0
-  const [{ results, loading }, dispatch] = useResultsFiltered(data, '')
+  const [state, dispatch] = useResultsFiltered(data, '')
+  const { results, loading } = state
 
   const handleStateChange = useCallback(
     (changes: StateChangeOptions<any>, downshiftState: DownshiftState<any>) => {
       if (changes.hasOwnProperty('inputValue')) {
         const { inputValue, selectedItem } = downshiftState
-        if (inputValue !== null) {
+        if (inputValue) {
           dispatch({
             type: 'inputChange',
             payload: { search: inputValue || '', selectedItem, cursorPosition },
@@ -68,12 +69,43 @@ const SearchContainer: React.FC = () => {
     )
     const selectedItem = alreadySelected ? currentItems : [...currentItems, changes.selectedItem]
     const groupedSelections = groupSelectionsByType(selectedItem)
+    // Adding a space at the end to start with a clean search when press enter
     const inputValue = parseSelectionToInput(groupedSelections)
     return {
       ...changes,
       selectedItem,
       inputValue,
     }
+  }
+
+  const parseInputToFields = (input: string): { type: string; labels: string[] }[] => {
+    return input
+      .split(' ')
+      .filter((s) => s)
+      .map((s) => {
+        const [type, labels] = s.split(':')
+        return {
+          type,
+          labels: labels
+            ? labels
+                .split(',')
+                .map(replaceWithNormalSpaces)
+                .filter((l) => l)
+            : [],
+        }
+      })
+  }
+
+  const getSelectedItemsByInput = (input: string, currentSelection: DataItem[]): DataItem[] => {
+    const inputValuesParsed = input ? parseInputToFields(input) : null
+    return inputValuesParsed !== null
+      ? currentSelection.filter(
+          (i: DataItem) =>
+            inputValuesParsed.find(
+              (p) => p.type === i.type && p.labels !== undefined && p.labels.includes(i.label)
+            ) !== undefined
+        )
+      : []
   }
 
   const handleChangeInput = (
@@ -91,46 +123,30 @@ const SearchContainer: React.FC = () => {
         }
       }
     }
-    const inputValuesParsed = changes.inputValue
-      ? changes.inputValue
-          .split(' ')
-          .filter((s) => s)
-          .map((s) => {
-            const [type, labels] = s.split(':')
-            return { type, labels: labels && labels.split(',').map(replaceWithNormalSpaces) }
-          })
-      : null
-
-    let selectedItem =
-      inputValuesParsed !== null && results !== null
-        ? results.filter(
-            (i: DataItem) =>
-              inputValuesParsed.find(
-                (p) => p.type === i.type && p.labels !== undefined && p.labels.includes(i.label)
-              ) !== undefined
-          )
-        : []
-
-    if (changes.inputValue) {
+    const inputValue = changes.inputValue || ''
+    let selectedItem = getSelectedItemsByInput(inputValue, state.selectedItem || [])
+    if (inputValue) {
       // Remove from current when cursor is in last character to suggest
       let currentLabelEndIndex = cursorPosition + 1
       let currentLabelStartIndex = 0
       for (let i = cursorPosition; i > 0; i--) {
-        if (changes.inputValue[i] === ':' || changes.inputValue[i] === ',') {
+        if (inputValue[i] === ':' || inputValue[i] === ',') {
           currentLabelStartIndex = i + 1
           break
         }
       }
       const currentLabel = replaceWithNormalSpaces(
-        changes.inputValue.slice(currentLabelStartIndex, currentLabelEndIndex)
+        inputValue.slice(currentLabelStartIndex, currentLabelEndIndex)
       )
       const currentSelection = selectedItem.find((i: DataItem) => i.label === currentLabel)
-      if (currentSelection) {
+      // Removes the current selected when cursor is in last character to suggest properly
+      // but don't do it when async as would need another fetch
+      if (currentSelection && !asyncFields.includes(currentSelection.type)) {
         selectedItem = selectedItem.filter((item: DataItem) => item.id !== currentSelection.id)
       }
     }
 
-    return { ...changes, selectedItem }
+    return { ...changes, selectedItem, isOpen: inputValue !== '' }
   }
 
   const stateReducer = useCallback(
@@ -143,10 +159,13 @@ const SearchContainer: React.FC = () => {
         case Downshift.stateChangeTypes.changeInput: {
           return handleChangeInput(state, changes)
         }
-        case Downshift.stateChangeTypes.mouseUp: {
-          return {
-            ...changes,
-            inputValue: state.inputValue || '',
+        default:
+          // Avoids warning on uncontrolled input value
+          return { ...changes, inputValue: changes.inputValue || state.inputValue || '' }
+      }
+    },
+    []
+  )
 
   const customKeyDownHandler = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>, downshift: any) => {
