@@ -1,6 +1,7 @@
 import React from 'react'
 import styles from './search.module.css'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
+import { FixedSizeList } from 'react-window'
 import { DataItem } from '../../types/data'
 
 interface SearchProps {
@@ -48,24 +49,36 @@ const Search: React.FC<SearchProps> = (props) => {
               />
             </div>
             {!isOpen ? null : (
-              <ul className={styles.optionList} {...getMenuProps()}>
-                {items.map((item: DataItem, index: number) => (
-                  <li
-                    key={item.id}
-                    {...getItemProps({
-                      item,
-                      index,
-                    })}
-                    style={{
-                      backgroundColor: highlightedIndex === index ? '#ccc' : 'transparent',
-                      color: selectedItem === item ? '#0f0f0f' : '#000',
-                    }}
-                  >
-                    {item.type}: {itemToString(item)}
-                  </li>
-                ))}
-                {loading === true && <li>loading...</li>}
-              </ul>
+              <div className={styles.optionList}>
+                <FixedSizeList
+                  height={300}
+                  itemSize={20}
+                  itemCount={items.length}
+                  outerElementType="ul"
+                  {...getMenuProps()}
+                >
+                  {({ index, style }) => {
+                    const item = items[index]
+                    return (
+                      <li
+                        key={item.id}
+                        {...getItemProps({
+                          item,
+                          index,
+                        })}
+                        style={{
+                          ...style,
+                          backgroundColor: highlightedIndex === index ? '#ccc' : 'transparent',
+                          color: selectedItem === item ? '#0f0f0f' : '#000',
+                        }}
+                      >
+                        {item.type}: {itemToString(item)}
+                      </li>
+                    )
+                  }}
+                </FixedSizeList>
+                {loading === true && <span className={styles.loadingContainer}> loading...</span>}
+              </div>
             )}
           </div>
         )
