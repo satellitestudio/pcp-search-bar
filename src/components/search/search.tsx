@@ -5,6 +5,7 @@ import { DataItem } from '../../types/data'
 
 interface SearchProps {
   items: DataItem[]
+  loading?: boolean
   itemToString(obj: DataItem): string
   onChange(selectedItems: DataItem[], downshiftState: DownshiftState<any>): void
   stateReducer(
@@ -15,7 +16,7 @@ interface SearchProps {
 }
 
 const Search: React.FC<SearchProps> = (props) => {
-  const { itemToString, onChange, stateReducer, items, onStateChange } = props
+  const { itemToString, onChange, stateReducer, items, onStateChange, loading } = props
   return (
     <Downshift
       onChange={onChange}
@@ -60,6 +61,7 @@ const Search: React.FC<SearchProps> = (props) => {
                     {item.type}: {itemToString(item)}
                   </li>
                 ))}
+                {loading === true && <li>loading...</li>}
               </ul>
             )}
           </div>

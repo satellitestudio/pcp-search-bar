@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react'
-import matchSorter from 'match-sorter'
+import React, { useCallback } from 'react'
 import SearchComponent from './search'
 import { DataValue, DataSelection, DataSelectionGrouped } from './search.types'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
+import { useResultsFiltered } from './search.hooks'
 
 import data from '../../data/data'
 import { DataItem } from '../../types/data'
@@ -10,63 +10,9 @@ import { DataItem } from '../../types/data'
 // Hack to look like spaces but be able to identify between input spaces and label spaces
 const breakingSpaceCharacter = '\u00a0'
 const breakingSpaceRegex = new RegExp(breakingSpaceCharacter, 'g')
-const replaceWithBreakingSpaces = (string: string) => string.replace(/\s/gi, breakingSpaceCharacter)
-const replaceWithNormalSpaces = (string: string) => string.replace(breakingSpaceRegex, ' ')
-
-const getItemsFiltered = (
-  items: DataItem[],
-  input: string,
-  selectedItems: DataItem[],
-  cursorPosition: number
-): DataItem[] => {
-  if (!input) return items
-  let selectedItemIds = (selectedItems && selectedItems.map((i) => i.id)) || []
-  const selectedItemTypes = (selectedItems && selectedItems.map((i) => i.type)) || []
-  const selectedItemLabels = (selectedItems && selectedItems.map((i) => i.label)) || []
-  const existingSearchTypes: { [type: string]: boolean } = {}
-
-  const searchStrings = input
-    .replace(/:/gi, ' ')
-    .replace(/,/gi, ' ')
-    .split(' ')
-    // Space replacement needs to be done after splitting by regular spaces
-    .map(replaceWithNormalSpaces)
-    .filter((v) => {
-      if (!v || v === '') return false
-      if (selectedItemTypes.includes(v)) {
-        // Needed when search by type with a current type filter added
-        if (!existingSearchTypes[v]) {
-          existingSearchTypes[v] = true
-          return false
-        } else {
-          return true
-        }
-      }
-      return !selectedItemLabels.includes(v)
-    })
-  const isLastSpace = input[cursorPosition] === ' '
-  if (!isLastSpace) {
-    let currentTypeEndIndex = 0
-    let currentTypeStartIndex = 0
-    for (let i = cursorPosition; i > 0; i--) {
-      if (input[i] === ':') {
-        currentTypeEndIndex = i
-      } else if (input[i] === ' ') {
-        currentTypeStartIndex = i + 1
-        break
-      }
-    }
-    const currentType = input.slice(currentTypeStartIndex, currentTypeEndIndex)
-    searchStrings.push(currentType)
-  }
-
-  const itemsNotSelected =
-    selectedItemIds.length > 0 ? items.filter((i) => !selectedItemIds.includes(i.id)) : items
-
-  return searchStrings.reduce((acc, cleanValue) => {
-    return matchSorter(acc, cleanValue, { keys: ['label', 'type'] })
-  }, itemsNotSelected)
-}
+export const replaceWithBreakingSpaces = (string: string) =>
+  string.replace(/\s/gi, breakingSpaceCharacter)
+export const replaceWithNormalSpaces = (string: string) => string.replace(breakingSpaceRegex, ' ')
 
 const groupSelectionsByType = (selections: DataItem[]): DataSelectionGrouped => {
   return selections.reduce((acc: DataSelectionGrouped, selection: DataItem) => {
@@ -95,20 +41,18 @@ const parseSelectionToInput = (selections: DataSelectionGrouped) => {
 
 const SearchContainer: React.FC = () => {
   let cursorPosition = 0
-  const [items, setItems] = useState<DataItem[]>(data)
-  const [itemsFiltered, setItemsFiltered] = useState<DataItem[]>([])
+  const [{ results, loading }, dispatch] = useResultsFiltered(data, '')
 
   const handleStateChange = useCallback(
     (changes: StateChangeOptions<any>, downshiftState: DownshiftState<any>) => {
       if (changes.hasOwnProperty('inputValue')) {
         const { inputValue, selectedItem } = downshiftState
-        const itemsFiltered = getItemsFiltered(
-          items,
-          inputValue || '',
-          selectedItem,
-          cursorPosition
-        )
-        setItemsFiltered(itemsFiltered)
+        if (inputValue !== null) {
+          dispatch({
+            type: 'inputChange',
+            payload: { search: inputValue, selectedItem, cursorPosition },
+          })
+        }
       }
     },
     []
@@ -158,8 +102,8 @@ const SearchContainer: React.FC = () => {
       : null
 
     let selectedItem =
-      inputValuesParsed !== null && items !== null
-        ? items.filter(
+      inputValuesParsed !== null && results !== null
+        ? results.filter(
             (i: DataItem) =>
               inputValuesParsed.find(
                 (p) => p.type === i.type && p.labels !== undefined && p.labels.includes(i.label)
@@ -180,9 +124,9 @@ const SearchContainer: React.FC = () => {
       const currentLabel = replaceWithNormalSpaces(
         changes.inputValue.slice(currentLabelStartIndex, currentLabelEndIndex)
       )
-      const currentSelection = selectedItem.find((i) => i.label === currentLabel)
+      const currentSelection = selectedItem.find((i: DataItem) => i.label === currentLabel)
       if (currentSelection) {
-        selectedItem = selectedItem.filter((item) => item.id !== currentSelection.id)
+        selectedItem = selectedItem.filter((item: DataItem) => item.id !== currentSelection.id)
       }
     }
     const isLastSpace =
@@ -228,7 +172,8 @@ const SearchContainer: React.FC = () => {
 
   return (
     <SearchComponent
-      items={itemsFiltered}
+      items={results}
+      loading={loading}
       onChange={handleChange}
       itemToString={itemToString}
       stateReducer={stateReducer}
