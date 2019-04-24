@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 import SearchComponent from './search'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
-import { useResultsFiltered, asyncFields } from './search.hooks'
+import { useResultsFiltered } from './search.hooks'
 
 import data from '../../data/data'
 import { DataItem } from '../../types/data'
@@ -11,6 +11,7 @@ import {
   calculateCursorPosition,
   parseInputToFields,
 } from './search.utils'
+import { asyncFields } from './search.config'
 
 interface SearchContainerProps {
   initialSelection: DataItem[]

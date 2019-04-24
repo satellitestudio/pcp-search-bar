@@ -3,9 +3,7 @@ import matchSorter from 'match-sorter'
 import { DataItem } from '../../types/data'
 import { VesselAPIResult } from '../../types/api'
 import { replaceWithNormalSpaces } from './search.utils'
-
-export const searchTypes = ['flag', 'rfmo', 'vessel']
-export const asyncFields = ['vessel']
+import { searchTypesList, asyncFields } from './search.config'
 
 const parseSearchFieldsInput = (
   input: string,
@@ -123,13 +121,13 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
   const { search, selectedItem, cursorPosition } = state
   useEffect(() => {
     const searchFields = parseSearchFieldsInput(search, selectedItem, cursorPosition)
-    const searchFieldsTypes = searchFields.filter((f) => searchTypes.includes(f))
+    const searchFieldsTypes = searchFields.filter((f) => searchTypesList.includes(f))
     const needsRequest =
       searchFieldsTypes.length === 0 || searchFieldsTypes.some((r) => asyncFields.includes(r))
     const selectedItemIds = selectedItem.map((i: DataItem) => i.id)
     const selectedItemLabels = selectedItem.map((i: DataItem) => i.label)
     const searchQuery = searchFields
-      .filter((f) => !selectedItemLabels.includes(f) && !searchTypes.includes(f))
+      .filter((f) => !selectedItemLabels.includes(f) && !searchTypesList.includes(f))
       .join(',')
     const asyncNeeded = needsRequest && searchQuery !== ''
     dispatch({ type: 'startSearch', payload: asyncNeeded })

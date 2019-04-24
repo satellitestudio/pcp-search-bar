@@ -22,7 +22,7 @@ export const parseSelectionGroupedToInput = (
   )
 }
 
-const groupSelectionsByType = (selections: DataItem[]): DataSelectionGrouped => {
+export const groupSelectionsByType = (selections: DataItem[]): DataSelectionGrouped => {
   return selections.reduce((acc: DataSelectionGrouped, selection: DataItem) => {
     const { type, id, label } = selection
     const existingType = acc[type]
