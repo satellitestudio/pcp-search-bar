@@ -43,10 +43,7 @@ interface SearchProps {
   initialSelection?: DataItem[]
   itemToString(obj: DataItem): string
   onChange?(selectedItems: DataItem[], downshiftState: any): void
-  onKeyDown?(
-    event: React.KeyboardEvent<HTMLInputElement>,
-    downshiftState: DownshiftState<DataItem[]>
-  ): void
+  onKeyDown?(event: React.SyntheticEvent, downshiftState: DownshiftState<DataItem[]>): void
   stateReducer(
     state: DownshiftState<DataItem[]>,
     changes: StateChangeOptions<DataItem[]>
@@ -102,6 +99,8 @@ const Search: React.FC<SearchProps> = (props) => {
                 {...getInputProps({
                   placeholder: 'Start searching',
                   onKeyDown:
+                    onKeyDown !== undefined ? (event) => onKeyDown(event, downshift) : undefined,
+                  onClick:
                     onKeyDown !== undefined ? (event) => onKeyDown(event, downshift) : undefined,
                 })}
                 spellCheck={false}

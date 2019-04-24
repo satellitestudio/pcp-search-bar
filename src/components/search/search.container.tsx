@@ -14,7 +14,6 @@ interface SearchContainerProps {
 }
 
 const SearchContainer: React.FC<SearchContainerProps> = (props) => {
-  let cursorPosition = 0
   const { initialSelection, onChange, staticOptions } = props
   const [state, dispatch] = useResultsFiltered(staticOptions, '')
   const { results, loading, cachedResults } = state
@@ -26,13 +25,11 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
         const inputValueString = inputValue || ''
         if (selectedItem !== null) {
           onChange(selectedItem, inputValueString)
-          if (inputValue) {
-            dispatch({
-              type: 'inputChange',
-              payload: { search: inputValueString, selectedItem, cursorPosition },
-            })
-          }
         }
+        dispatch({
+          type: 'inputChange',
+          payload: { search: inputValueString, selectedItem },
+        })
       }
     },
     []
@@ -74,7 +71,8 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
     const selectedItems = state.selectedItem || []
     const selectedOptions = uniqBy([...selectedItems, ...cachedResults], 'id')
     const selectedItem = getSelectedItemsByInput(inputValue, selectedOptions)
-    cursorPosition = calculateCursorPosition(changes.inputValue || '', state.inputValue || '')
+    const cursorPosition = calculateCursorPosition(changes.inputValue || '', state.inputValue || '')
+    dispatch({ type: 'setCursorPosition', payload: cursorPosition })
 
     return {
       ...changes,
@@ -108,14 +106,18 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
   )
 
   const customKeyDownHandler = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>, downshift: any) => {
+    (event: any, downshift: any) => {
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.type === 'click') {
+        const cursorPosition = event.target.selectionStart
+        dispatch({ type: 'setCursorPosition', payload: cursorPosition })
+      }
       const { highlightedIndex, inputValue, setState } = downshift
       const hasValue = inputValue !== '' && inputValue !== ' '
       const isSpace = event.key === ' '
       const isComma = event.key === ','
       const hasOneOptions = results.length === 1
       if (hasValue && ((isSpace || isComma) && hasOneOptions)) {
-        ;(event as any).nativeEvent.preventDownshiftDefault = true
+        event.nativeEvent.preventDownshiftDefault = true
         if (highlightedIndex !== null && highlightedIndex >= 0) {
           const selectedItem = results[highlightedIndex]
           if (selectedItem) {

@@ -55,7 +55,7 @@ const parseSearchFieldsInput = (
     }
   }
 
-  return searchFields
+  return Array.from(new Set(searchFields))
 }
 
 const getItemsFiltered = (
@@ -77,7 +77,7 @@ const getItemsFiltered = (
 }
 
 interface ResultsAction {
-  type: 'inputChange' | 'startSearch' | 'endSearch'
+  type: 'inputChange' | 'startSearch' | 'endSearch' | 'setCursorPosition'
   payload?: any
 }
 
@@ -105,6 +105,8 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
     switch (action.type) {
       case 'inputChange':
         return { ...state, ...action.payload }
+      case 'setCursorPosition':
+        return { ...state, cursorPosition: action.payload }
       case 'startSearch': {
         const { staticData, search, selectedItem, cursorPosition } = state
         return {
@@ -165,6 +167,6 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
         })
       return () => controller.abort()
     }
-  }, [search])
+  }, [search, cursorPosition])
   return [state, dispatch]
 }
