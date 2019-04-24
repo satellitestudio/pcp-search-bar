@@ -37,7 +37,7 @@ const App: React.FC = (): React.ReactElement => {
                 <strong>{capitalizeFirst(key)}</strong>:{' '}
                 {selections[key] !== undefined ? (
                   selections[key].values.map((value, index) => (
-                    <span>
+                    <span key={value.id}>
                       {value.label}({value.id})
                       {index === selections[key].values.length - 1 ? '' : ','}
                     </span>

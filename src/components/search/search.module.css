@@ -1,15 +1,36 @@
 .searchContainer {
   position: relative;
+  font-size: 14px;
 }
 
 .searchInput {
   width: 100%;
   display: block;
+  font-size: inherit;
+  padding: 10px;
+  border-width: 2px;
+  background-color: transparent;
+}
+
+.searchErrorsContainer {
+  font-size: inherit;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  color: transparent;
+  text-decoration: underline;
+  padding: 12px; /* padding + border input */
+}
+
+.searchItemError {
+  text-decoration: underline;
+  text-decoration-color: red;
 }
 
 .optionList {
   position: absolute;
-  top: 25px;
+  top: 40px;
   left: 0;
   right: 0;
   background-color: antiquewhite;

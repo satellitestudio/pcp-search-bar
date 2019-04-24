@@ -2,7 +2,7 @@ import { useEffect, useReducer } from 'react'
 import matchSorter from 'match-sorter'
 import { DataItem } from '../../types/data'
 import { VesselAPIResult } from '../../types/api'
-import { replaceWithNormalSpaces } from './search.utils'
+import { replaceWithNormalSpaces, getInputFields } from './search.utils'
 import { searchTypesList, asyncFields } from './search.config'
 
 const parseSearchFieldsInput = (
@@ -14,14 +14,10 @@ const parseSearchFieldsInput = (
   const selectedItemLabels = (selectedItems && selectedItems.map((i) => i.label)) || []
   const existingSearchTypes: { [type: string]: boolean } = {}
 
-  const searchFields = input
-    .replace(/:/gi, ' ')
-    .replace(/,/gi, ' ')
-    .split(' ')
+  const searchFields = getInputFields(input)
     // Space replacement needs to be done after splitting by regular spaces
     .map(replaceWithNormalSpaces)
-    .filter((v: any) => {
-      if (!v || v === '') return false
+    .filter((v) => {
       if (selectedItemTypes.includes(v)) {
         // Needed when search by type with a current type filter added
         if (!existingSearchTypes[v]) {

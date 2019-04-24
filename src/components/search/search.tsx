@@ -3,6 +3,7 @@ import styles from './search.module.css'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { FixedSizeList } from 'react-window'
 import { DataItem } from '../../types/data'
+import { getInputFields } from './search.utils'
 
 // TODO: highlight search terms on results list
 // const HighlightedField = ({ string, query }) => {
@@ -10,6 +11,27 @@ import { DataItem } from '../../types/data'
 //   const fragments = string.replace(new RegExp(query, 'gi'), `<mark>${query}</mark>`)
 //   return <span dangerouslySetInnerHTML={{ __html: fragments }} /> // eslint-disable-line
 // }
+
+const getInputWithErrors = (input: string, selection: DataItem[]) => {
+  if (!input) return ''
+  const selectionStrings = Array.from(
+    new Set([...selection.map((s) => s.label), ...selection.map((s) => s.type)])
+  )
+  const inputStrings = getInputFields(input)
+  const incorrectInputStrings = inputStrings.filter(
+    (i) => !selectionStrings.some((label) => label === i)
+  )
+  let inputWithErrors = input
+  if (incorrectInputStrings.length) {
+    incorrectInputStrings.forEach((incorrectInput) => {
+      inputWithErrors = inputWithErrors.replace(
+        new RegExp(`\\b${incorrectInput}\\b`, 'g'),
+        `<span class=${styles.searchItemError}>${incorrectInput}</span>`
+      )
+    })
+  }
+  return <span dangerouslySetInnerHTML={{ __html: inputWithErrors }} /> // eslint-disable-line
+}
 
 interface SearchProps {
   items: DataItem[]
@@ -60,12 +82,18 @@ const Search: React.FC<SearchProps> = (props) => {
           getMenuProps,
           getItemProps,
           isOpen,
+          inputValue,
           selectedItem,
           highlightedIndex,
         } = downshift
         return (
           <div className={styles.searchContainer}>
             <div>
+              {!isOpen && (
+                <div className={styles.searchErrorsContainer}>
+                  {getInputWithErrors(inputValue || '', selectedItem)}
+                </div>
+              )}
               <input
                 className={styles.searchInput}
                 {...getInputProps({
@@ -73,6 +101,7 @@ const Search: React.FC<SearchProps> = (props) => {
                   onKeyDown:
                     onKeyDown !== undefined ? (event) => onKeyDown(event, downshift) : undefined,
                 })}
+                spellCheck={false}
               />
             </div>
             {!isOpen ? null : (

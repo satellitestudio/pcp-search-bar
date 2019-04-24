@@ -8,6 +8,15 @@ export const replaceWithBreakingSpaces = (string: string) =>
   string.replace(/\s/gi, breakingSpaceCharacter)
 export const replaceWithNormalSpaces = (string: string) => string.replace(breakingSpaceRegex, ' ')
 
+export const getInputFields = (input: string): string[] => {
+  if (!input) return []
+  return input
+    .replace(/:/gi, ' ')
+    .replace(/,/gi, ' ')
+    .split(' ')
+    .filter((i) => i)
+}
+
 export const parseSelectionGroupedToInput = (
   selections: DataSelectionGrouped,
   lastCharacter: string = ' '
