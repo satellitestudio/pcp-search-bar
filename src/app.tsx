@@ -11,7 +11,7 @@ const App: React.FC = (): React.ReactElement => {
   }, [])
 
   const handleChange = useCallback((selectedItems: DataItem[], inputValue) => {
-    const url = window.location.origin + '?search=' + inputValue
+    const url = window.location.origin + window.location.pathname + '?search=' + inputValue
     window.history.replaceState(window.history.state, '', url)
   }, [])
 
