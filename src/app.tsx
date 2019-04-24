@@ -12,10 +12,10 @@ const capitalizeFirst = (string: string): string => string.charAt(0).toUpperCase
 const App: React.FC = (): React.ReactElement => {
   const urlSelection = useMemo(() => {
     const query = qs.parse(window.location.search, { ignoreQueryPrefix: true })
-    return query && query.search ? query.search : null
+    return query && query.search ? query.search : []
   }, [])
   const [selections, updateSelection] = useState<DataSelectionGrouped>(
-    groupSelectionsByType(urlSelection)
+    groupSelectionsByType(urlSelection || [])
   )
 
   const handleChange = useCallback((selectedItems: DataItem[]) => {

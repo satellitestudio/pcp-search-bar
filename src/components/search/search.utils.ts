@@ -23,6 +23,7 @@ export const parseSelectionGroupedToInput = (
 }
 
 export const groupSelectionsByType = (selections: DataItem[]): DataSelectionGrouped => {
+  if (selections === null) return {}
   return selections.reduce((acc: DataSelectionGrouped, selection: DataItem) => {
     const { type, id, label } = selection
     const existingType = acc[type]
