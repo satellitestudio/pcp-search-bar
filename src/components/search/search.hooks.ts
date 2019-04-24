@@ -74,7 +74,7 @@ const getItemsFiltered = (
 }
 
 interface ResultsAction {
-  type: 'inputChange' | 'startSearch' | 'endSearch' | 'setLoading'
+  type: 'inputChange' | 'startSearch' | 'endSearch'
   payload?: any
 }
 
@@ -107,9 +107,6 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
           results: getItemsFiltered(staticData, search, selectedItem, cursorPosition),
           loading: action.payload,
         }
-      }
-      case 'setLoading': {
-        return { ...state, loading: action.payload }
       }
       case 'endSearch': {
         return {
@@ -162,6 +159,6 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
         })
       return () => controller.abort()
     }
-  }, [search, selectedItem])
+  }, [search])
   return [state, dispatch]
 }
