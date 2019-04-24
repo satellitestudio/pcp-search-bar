@@ -30,7 +30,6 @@ const parseSearchFieldsInput = (
       return !selectedItemLabels.includes(v)
     })
 
-  const isLastComma = input[cursorPosition] === ','
   let previousColonPosition = 0
   for (let i = cursorPosition; i > 0; i--) {
     if (input[i] === ':') {
@@ -38,8 +37,10 @@ const parseSearchFieldsInput = (
       break
     }
   }
-  const isSearchingInType = input.slice(previousColonPosition, cursorPosition).indexOf(' ') === -1
-  if (isLastComma || isSearchingInType) {
+  const isSearchingInType =
+    input.slice(previousColonPosition, cursorPosition + 1).indexOf(' ') === -1
+
+  if (isSearchingInType) {
     let currentTypeStartIndex = 0
     for (let i = previousColonPosition; i > 0; i--) {
       if (input[i] === ' ') {
@@ -52,6 +53,7 @@ const parseSearchFieldsInput = (
       searchFields.push(currentType)
     }
   }
+
   return searchFields
 }
 
