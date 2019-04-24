@@ -6,6 +6,7 @@ import { DataItem } from './types/data'
 import { groupSelectionsByType } from './components/search/search.utils'
 import { DataSelectionGrouped } from './components/search/search.types'
 import { SEARCH_TYPES } from './components/search/search.config'
+import data from './data/data'
 
 const capitalizeFirst = (string: string): string => string.charAt(0).toUpperCase() + string.slice(1)
 
@@ -27,7 +28,7 @@ const App: React.FC = (): React.ReactElement => {
 
   return (
     <div className={styles.app}>
-      <Search initialSelection={urlSelection} onChange={handleChange} />
+      <Search staticOptions={data} initialSelection={urlSelection} onChange={handleChange} />
       <div className={styles.selectionContainer}>
         <h2>Current filter selection by</h2>
         {selections !== null ? (

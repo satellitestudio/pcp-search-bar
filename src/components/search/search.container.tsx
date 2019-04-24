@@ -3,7 +3,6 @@ import SearchComponent from './search'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { useResultsFiltered } from './search.hooks'
 
-import data from '../../data/data'
 import { DataItem } from '../../types/data'
 import {
   replaceWithNormalSpaces,
@@ -15,13 +14,14 @@ import { asyncFields } from './search.config'
 
 interface SearchContainerProps {
   initialSelection: DataItem[]
+  staticOptions: DataItem[]
   onChange(selectedItems: DataItem[], inputValue: string): void
 }
 
 const SearchContainer: React.FC<SearchContainerProps> = (props) => {
   let cursorPosition = 0
-  const [state, dispatch] = useResultsFiltered(data, '')
-  const { initialSelection, onChange } = props
+  const { initialSelection, onChange, staticOptions } = props
+  const [state, dispatch] = useResultsFiltered(staticOptions, '')
   const { results, loading } = state
 
   const handleStateChange = useCallback(
