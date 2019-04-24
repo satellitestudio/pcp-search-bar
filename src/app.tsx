@@ -5,19 +5,20 @@ import qs from 'qs'
 import { DataItem } from './types/data'
 
 const App: React.FC = (): React.ReactElement => {
-  const query = useMemo(() => {
-    const query = qs.parse(window.location.search.replace('?', ''))
-    return (query && query.search) || ''
+  const selection = useMemo(() => {
+    const query = qs.parse(window.location.search, { ignoreQueryPrefix: true })
+    return query && query.search ? query.search : null
   }, [])
 
-  const handleChange = useCallback((selectedItems: DataItem[], inputValue) => {
-    const url = window.location.origin + window.location.pathname + '?search=' + inputValue
+  const handleChange = useCallback((selectedItems: DataItem[]) => {
+    const selectionQuery = qs.stringify({ search: selectedItems }, { addQueryPrefix: true })
+    const url = window.location.origin + window.location.pathname + selectionQuery
     window.history.replaceState(window.history.state, '', url)
   }, [])
 
   return (
     <div className="app">
-      <Search initialSearch={query} onChange={handleChange} />
+      <Search initialSelection={selection} onChange={handleChange} />
     </div>
   )
 }

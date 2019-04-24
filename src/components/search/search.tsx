@@ -4,10 +4,18 @@ import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { FixedSizeList } from 'react-window'
 import { DataItem } from '../../types/data'
 
+// TODO: highlight search terms on results list
+// const HighlightedField = ({ string, query }) => {
+//   if (!string) return ''
+//   const fragments = string.replace(new RegExp(query, 'gi'), `<mark>${query}</mark>`)
+//   return <span dangerouslySetInnerHTML={{ __html: fragments }} /> // eslint-disable-line
+// }
+
 interface SearchProps {
   items: DataItem[]
   loading?: boolean
-  initialInputValue: string
+  initialInputValue?: string
+  initialSelection?: DataItem[]
   itemToString(obj: DataItem): string
   onChange?(selectedItems: DataItem[], downshiftState: any): void
   onKeyDown?(
@@ -28,6 +36,7 @@ const Search: React.FC<SearchProps> = (props) => {
   const {
     itemToString,
     initialInputValue,
+    initialSelection,
     onChange,
     onKeyDown,
     stateReducer,
@@ -39,6 +48,7 @@ const Search: React.FC<SearchProps> = (props) => {
     <Downshift
       onChange={onChange}
       initialInputValue={initialInputValue}
+      initialSelectedItem={initialSelection}
       stateReducer={stateReducer}
       itemToString={itemToString}
       onStateChange={onStateChange}

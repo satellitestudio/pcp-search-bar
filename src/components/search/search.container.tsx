@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import SearchComponent from './search'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { useResultsFiltered, asyncFields } from './search.hooks'
@@ -13,13 +13,14 @@ import {
 } from './search.utils'
 
 interface SearchContainerProps {
-  initialSearch: string
+  initialSelection: DataItem[]
   onChange(selectedItems: DataItem[], inputValue: string): void
 }
 
 const SearchContainer: React.FC<SearchContainerProps> = (props) => {
   let cursorPosition = 0
-  const [state, dispatch] = useResultsFiltered(data, props.initialSearch)
+  const [state, dispatch] = useResultsFiltered(data, '')
+  const { initialSelection, onChange } = props
   const { results, loading } = state
 
   const handleStateChange = useCallback(
@@ -28,7 +29,7 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
         const { inputValue = '', selectedItem } = downshiftState
         const inputValueString = inputValue || ''
         if (selectedItem !== null) {
-          props.onChange(selectedItem, inputValueString)
+          onChange(selectedItem, inputValueString)
           if (inputValue) {
             dispatch({
               type: 'inputChange',
@@ -152,13 +153,18 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
     return i ? i.label : ''
   }, [])
 
+  const initialInputValue = useMemo((): string => {
+    return initialSelection !== null ? parseSelectionToInput(initialSelection) : ''
+  }, [])
+
   return (
     <SearchComponent
       items={results}
       loading={loading}
       itemToString={itemToString}
       stateReducer={stateReducer}
-      initialInputValue={props.initialSearch}
+      initialInputValue={initialInputValue}
+      initialSelection={initialSelection}
       onKeyDown={customKeyDownHandler}
       onStateChange={handleStateChange}
     />

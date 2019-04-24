@@ -37,7 +37,10 @@ const groupSelectionsByType = (selections: DataItem[]): DataSelectionGrouped => 
   }, {})
 }
 
-export const parseSelectionToInput = (selection: DataItem[], lastCharacter: string): string => {
+export const parseSelectionToInput = (
+  selection: DataItem[],
+  lastCharacter: string = ' '
+): string => {
   const groupedSelections = groupSelectionsByType(selection)
   return parseSelectionGroupedToInput(groupedSelections, lastCharacter)
 }
