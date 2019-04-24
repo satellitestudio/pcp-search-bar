@@ -29,19 +29,25 @@ const parseSearchFieldsInput = (
       }
       return !selectedItemLabels.includes(v)
     })
-  const isLastSpace = input[cursorPosition] === ' '
-  if (!isLastSpace) {
-    let currentTypeEndIndex = 0
+
+  const isLastComma = input[cursorPosition] === ','
+  let previousColonPosition = 0
+  for (let i = cursorPosition; i > 0; i--) {
+    if (input[i] === ':') {
+      previousColonPosition = i
+      break
+    }
+  }
+  const isSearchingInType = input.slice(previousColonPosition, cursorPosition).indexOf(' ') === -1
+  if (isLastComma || isSearchingInType) {
     let currentTypeStartIndex = 0
-    for (let i = cursorPosition; i > 0; i--) {
-      if (input[i] === ':') {
-        currentTypeEndIndex = i
-      } else if (input[i] === ' ') {
+    for (let i = previousColonPosition; i > 0; i--) {
+      if (input[i] === ' ') {
         currentTypeStartIndex = i + 1
         break
       }
     }
-    const currentType = input.slice(currentTypeStartIndex, currentTypeEndIndex)
+    const currentType = input.slice(currentTypeStartIndex, previousColonPosition)
     if (currentType) {
       searchFields.push(currentType)
     }

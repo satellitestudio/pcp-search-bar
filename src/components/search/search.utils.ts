@@ -75,14 +75,14 @@ export const parseInputToFields = (input: string): { type: string; labels: strin
 
 export const calculateCursorPosition = (newInput: string, oldInput: string): number => {
   if (!newInput || !oldInput) return 0
-  let cursorPosition = 0
   const length = Math.max(oldInput.length, newInput.length)
   for (let i = 0; i < length; i++) {
     if (newInput[i] === undefined) {
-      cursorPosition -= 1
-    } else if (oldInput[i] === newInput[i]) {
-      cursorPosition += 1
+      // is deleting characters
+      return i - 1
+    } else if (newInput[i] !== oldInput[i]) {
+      return i
     }
   }
-  return cursorPosition
+  return 0
 }

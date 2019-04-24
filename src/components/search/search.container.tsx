@@ -4,13 +4,7 @@ import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { useResultsFiltered } from './search.hooks'
 
 import { DataItem } from '../../types/data'
-import {
-  replaceWithNormalSpaces,
-  parseSelectionToInput,
-  calculateCursorPosition,
-  parseInputToFields,
-} from './search.utils'
-import { asyncFields } from './search.config'
+import { parseSelectionToInput, calculateCursorPosition, parseInputToFields } from './search.utils'
 
 interface SearchContainerProps {
   initialSelection: DataItem[]
@@ -75,31 +69,35 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
     state: DownshiftState<DataItem[]>,
     changes: StateChangeOptions<DataItem[]>
   ): StateChangeOptions<DataItem[]> => {
-    cursorPosition = calculateCursorPosition(changes.inputValue || '', state.inputValue || '')
     const inputValue = changes.inputValue || ''
-    let selectedItem = getSelectedItemsByInput(inputValue, state.selectedItem || [])
-    if (inputValue) {
-      // Remove from current when cursor is in last character to suggest
-      let currentLabelEndIndex = cursorPosition + 1
-      let currentLabelStartIndex = 0
-      for (let i = cursorPosition; i > 0; i--) {
-        if (inputValue[i] === ':' || inputValue[i] === ',') {
-          currentLabelStartIndex = i + 1
-          break
-        }
-      }
-      const currentLabel = replaceWithNormalSpaces(
-        inputValue.slice(currentLabelStartIndex, currentLabelEndIndex)
-      )
-      const currentSelection = selectedItem.find((i: DataItem) => i.label === currentLabel)
-      // Removes the current selected when cursor is in last character to suggest properly
-      // but don't do it when async as would need another fetch
-      if (currentSelection && !asyncFields.includes(currentSelection.type)) {
-        selectedItem = selectedItem.filter((item: DataItem) => item.id !== currentSelection.id)
-      }
-    }
+    const selectedItem = getSelectedItemsByInput(inputValue, state.selectedItem || [])
+    cursorPosition = calculateCursorPosition(changes.inputValue || '', state.inputValue || '')
+    // if (inputValue) {
+    //   // Remove from current when cursor is in last character to suggest
+    //   let currentLabelEndIndex = cursorPosition + 1
+    //   let currentLabelStartIndex = 0
+    //   for (let i = cursorPosition; i > 0; i--) {
+    //     if (inputValue[i] === ':' || inputValue[i] === ',') {
+    //       currentLabelStartIndex = i + 1
+    //       break
+    //     }
+    //   }
+    //   const currentLabel = replaceWithNormalSpaces(
+    //     inputValue.slice(currentLabelStartIndex, currentLabelEndIndex)
+    //   )
+    //   const currentSelection = selectedItem.find((i: DataItem) => i.label === currentLabel)
+    //   // Removes the current selected when cursor is in last character to suggest properly
+    //   // but don't do it when async as would need another fetch
+    //   if (currentSelection && !asyncFields.includes(currentSelection.type)) {
+    //     selectedItem = selectedItem.filter((item: DataItem) => item.id !== currentSelection.id)
+    //   }
+    // }
 
-    return { ...changes, selectedItem, isOpen: inputValue !== '' }
+    return {
+      ...changes,
+      selectedItem,
+      isOpen: inputValue !== '' && inputValue[cursorPosition] !== ',',
+    }
   }
 
   const stateReducer = useCallback(

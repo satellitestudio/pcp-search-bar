@@ -109,7 +109,7 @@ export default [
   },
   {
     id: 'SHN',
-    label: 'Saint Helena, Ascension and Tristan da Cunha',
+    label: 'Saint Helena Ascension and Tristan da Cunha',
   },
   {
     id: 'BLR',
