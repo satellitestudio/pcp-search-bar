@@ -1,44 +1,16 @@
 import React, { useCallback } from 'react'
 import SearchComponent from './search'
-import { DataValue, DataSelection, DataSelectionGrouped } from './search.types'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { useResultsFiltered, asyncFields } from './search.hooks'
 
 import data from '../../data/data'
 import { DataItem } from '../../types/data'
-
-// Hack to look like spaces but be able to identify between input spaces and label spaces
-const breakingSpaceCharacter = '\u00a0'
-const breakingSpaceRegex = new RegExp(breakingSpaceCharacter, 'g')
-export const replaceWithBreakingSpaces = (string: string) =>
-  string.replace(/\s/gi, breakingSpaceCharacter)
-export const replaceWithNormalSpaces = (string: string) => string.replace(breakingSpaceRegex, ' ')
-
-const groupSelectionsByType = (selections: DataItem[]): DataSelectionGrouped => {
-  return selections.reduce((acc: DataSelectionGrouped, selection: DataItem) => {
-    const { type, id, label } = selection
-    const existingType = acc[type]
-    if (existingType) {
-      acc[type].values.push({ id, label })
-      return acc
-    }
-    return {
-      ...acc,
-      [type]: { type, values: [{ id, label }] },
-    }
-  }, {})
-}
-
-const parseSelectionToInput = (selections: DataSelectionGrouped, lastCharacter: string = ' ') => {
-  const selectionsLength = Object.values(selections).length - 1
-  return Object.values(selections).reduce(
-    (acc: string, item: DataSelection, index: number) =>
-      `${acc !== '' ? `${acc} ` : ''}${item.type}:${item.values
-        .map((v: DataValue) => replaceWithBreakingSpaces(v.label))
-        .join(',')}${index === selectionsLength ? lastCharacter : ''}`,
-    ''
-  )
-}
+import {
+  replaceWithNormalSpaces,
+  parseSelectionToInput,
+  calculateCursorPosition,
+  parseInputToFields,
+} from './search.utils'
 
 interface SearchContainerProps {
   initialSearch: string
@@ -79,28 +51,10 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
       (item: DataItem) => item.id === changes.selectedItem.id
     )
     const selectedItem = alreadySelected ? currentItems : [...currentItems, changes.selectedItem]
-    const groupedSelections = groupSelectionsByType(selectedItem)
-    // Adding a space at the end to start with a clean search when press enter
-    const inputValue = parseSelectionToInput(groupedSelections, lastCharacter)
-    return { ...changes, selectedItem, inputValue }
-  }
 
-  const parseInputToFields = (input: string): { type: string; labels: string[] }[] => {
-    return input
-      .split(' ')
-      .filter((s) => s)
-      .map((s) => {
-        const [type, labels] = s.split(':')
-        return {
-          type,
-          labels: labels
-            ? labels
-                .split(',')
-                .map(replaceWithNormalSpaces)
-                .filter((l) => l)
-            : [],
-        }
-      })
+    // Adding a space at the end to start with a clean search when press enter
+    const inputValue = parseSelectionToInput(selectedItem, lastCharacter)
+    return { ...changes, selectedItem, inputValue }
   }
 
   const getSelectedItemsByInput = (input: string, currentSelection: DataItem[]): DataItem[] => {
@@ -119,17 +73,7 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
     state: DownshiftState<DataItem[]>,
     changes: StateChangeOptions<DataItem[]>
   ): StateChangeOptions<DataItem[]> => {
-    cursorPosition = 0
-    if (changes.inputValue && state.inputValue) {
-      const length = Math.max(state.inputValue.length, changes.inputValue.length)
-      for (let i = 0; i < length; i++) {
-        if (changes.inputValue[i] === undefined) {
-          cursorPosition -= 1
-        } else if (state.inputValue[i] === changes.inputValue[i]) {
-          cursorPosition += 1
-        }
-      }
-    }
+    cursorPosition = calculateCursorPosition(changes.inputValue || '', state.inputValue || '')
     const inputValue = changes.inputValue || ''
     let selectedItem = getSelectedItemsByInput(inputValue, state.selectedItem || [])
     if (inputValue) {

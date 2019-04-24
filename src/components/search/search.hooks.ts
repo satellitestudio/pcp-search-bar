@@ -1,8 +1,8 @@
 import { useEffect, useReducer } from 'react'
 import matchSorter from 'match-sorter'
 import { DataItem } from '../../types/data'
-import { VesselAPIEntry, VesselAPIResult } from '../../types/api'
-import { replaceWithNormalSpaces } from './search.container'
+import { VesselAPIResult } from '../../types/api'
+import { replaceWithNormalSpaces } from './search.utils'
 
 export const searchTypes = ['flag', 'rfmo', 'vessel']
 export const asyncFields = ['vessel']
@@ -146,9 +146,9 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
         .then((response) => response.json())
         .then((data: VesselAPIResult) => {
           const apiResults = data.entries
-            .filter((d: VesselAPIEntry) => d.name)
-            .map((d: VesselAPIEntry) => ({ id: d.vesselId, label: d.name, type: 'vessel' }))
-            .filter((d: DataItem) => !selectedItemIds.includes(d.id))
+            .filter((d) => d.name)
+            .map((d) => ({ id: d.vesselId, label: d.name, type: 'vessel' }))
+            .filter((d) => !selectedItemIds.includes(d.id))
           dispatch({ type: 'endSearch', payload: apiResults })
         })
         .catch((err) => {
