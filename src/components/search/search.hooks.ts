@@ -4,6 +4,7 @@ import { DataItem } from '../../types/data'
 import { VesselAPIResult } from '../../types/api'
 import { replaceWithNormalSpaces, getInputFields } from './search.utils'
 import { searchTypesList, asyncFields } from './search.config'
+import uniqBy from 'lodash/uniqBy'
 
 const parseSearchFieldsInput = (
   input: string,
@@ -87,6 +88,7 @@ interface ResultsState {
   cursorPosition: number
   search: string
   results: DataItem[]
+  cachedResults: DataItem[]
 }
 
 export const useResultsFiltered = (staticData: DataItem[], initialValue?: string): any => {
@@ -97,6 +99,7 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
     cursorPosition: 0,
     search: initialValue || '',
     results: staticData,
+    cachedResults: staticData,
   }
   const resultsReducer = (state: ResultsState, action: ResultsAction): ResultsState => {
     switch (action.type) {
@@ -114,6 +117,7 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
         return {
           ...state,
           results: [...state.results, ...action.payload],
+          cachedResults: uniqBy([...state.cachedResults, ...action.payload], 'id'),
           loading: false,
         }
       }

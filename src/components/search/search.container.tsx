@@ -5,6 +5,7 @@ import { useResultsFiltered } from './search.hooks'
 
 import { DataItem } from '../../types/data'
 import { parseSelectionToInput, calculateCursorPosition, parseInputToFields } from './search.utils'
+import uniqBy from 'lodash/uniqBy'
 
 interface SearchContainerProps {
   initialSelection: DataItem[]
@@ -16,7 +17,7 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
   let cursorPosition = 0
   const { initialSelection, onChange, staticOptions } = props
   const [state, dispatch] = useResultsFiltered(staticOptions, '')
-  const { results, loading } = state
+  const { results, loading, cachedResults } = state
 
   const handleStateChange = useCallback(
     (changes: StateChangeOptions<DataItem[]>, downshiftState: DownshiftState<DataItem[]>) => {
@@ -70,7 +71,9 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
     changes: StateChangeOptions<DataItem[]>
   ): StateChangeOptions<DataItem[]> => {
     const inputValue = changes.inputValue || ''
-    const selectedItem = getSelectedItemsByInput(inputValue, state.selectedItem || [])
+    const selectedItems = state.selectedItem || []
+    const selectedOptions = uniqBy([...selectedItems, ...cachedResults], 'id')
+    const selectedItem = getSelectedItemsByInput(inputValue, selectedOptions)
     cursorPosition = calculateCursorPosition(changes.inputValue || '', state.inputValue || '')
     // if (inputValue) {
     //   // Remove from current when cursor is in last character to suggest
@@ -121,7 +124,7 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
           return { ...changes, inputValue: changes.inputValue || state.inputValue || '' }
       }
     },
-    []
+    [cachedResults]
   )
 
   const customKeyDownHandler = useCallback(
