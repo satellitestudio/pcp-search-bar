@@ -75,26 +75,6 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
     const selectedOptions = uniqBy([...selectedItems, ...cachedResults], 'id')
     const selectedItem = getSelectedItemsByInput(inputValue, selectedOptions)
     cursorPosition = calculateCursorPosition(changes.inputValue || '', state.inputValue || '')
-    // if (inputValue) {
-    //   // Remove from current when cursor is in last character to suggest
-    //   let currentLabelEndIndex = cursorPosition + 1
-    //   let currentLabelStartIndex = 0
-    //   for (let i = cursorPosition; i > 0; i--) {
-    //     if (inputValue[i] === ':' || inputValue[i] === ',') {
-    //       currentLabelStartIndex = i + 1
-    //       break
-    //     }
-    //   }
-    //   const currentLabel = replaceWithNormalSpaces(
-    //     inputValue.slice(currentLabelStartIndex, currentLabelEndIndex)
-    //   )
-    //   const currentSelection = selectedItem.find((i: DataItem) => i.label === currentLabel)
-    //   // Removes the current selected when cursor is in last character to suggest properly
-    //   // but don't do it when async as would need another fetch
-    //   if (currentSelection && !asyncFields.includes(currentSelection.type)) {
-    //     selectedItem = selectedItem.filter((item: DataItem) => item.id !== currentSelection.id)
-    //   }
-    // }
 
     return {
       ...changes,
