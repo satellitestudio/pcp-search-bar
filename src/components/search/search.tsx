@@ -3,7 +3,7 @@ import styles from './search.module.css'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { FixedSizeList } from 'react-window'
 import { DataItem } from '../../types/data'
-import { getInputFields } from './search.utils'
+import { getInputFields, replaceWithBreakingSpaces } from './search.utils'
 
 // TODO: highlight search terms on results list
 // const HighlightedField = ({ string, query }) => {
@@ -15,7 +15,10 @@ import { getInputFields } from './search.utils'
 const getInputWithErrors = (input: string, selection: DataItem[]) => {
   if (!input) return ''
   const selectionStrings = Array.from(
-    new Set([...selection.map((s) => s.label), ...selection.map((s) => s.type)])
+    new Set([
+      ...selection.map((s) => replaceWithBreakingSpaces(s.label)),
+      ...selection.map((s) => s.type),
+    ])
   )
   const inputStrings = getInputFields(input)
   const incorrectInputStrings = inputStrings.filter(
