@@ -28,7 +28,7 @@
   text-decoration-color: red;
 }
 
-.optionList {
+.optionListContainer {
   position: absolute;
   top: 40px;
   left: 0;
@@ -36,7 +36,43 @@
   background-color: antiquewhite;
 }
 
+.optionList {
+  margin: 0;
+  padding: 0;
+}
+
+.optionlistItem {
+  position: relative;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between
+}
+
+.optionlistItemLoading {
+  composes: optionlistItem;
+  pointer-events: none;
+}
+
+.optionlistItemPlaceholder {
+  opacity: 0.6;
+}
+
 .loadingContainer {
   position: absolute;
   bottom: 0;
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0,0,0,.1);
+  border-radius: 50%;
+  border-top-color: inherit;
+  animation: spin 1s ease-in-out infinite;
+  animation: spin 1s ease-in-out infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

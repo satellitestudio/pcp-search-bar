@@ -4,6 +4,7 @@ import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { FixedSizeList } from 'react-window'
 import { DataItem } from 'types/data'
 import { getInputFields, replaceWithBreakingSpaces } from './search.utils'
+import { SEARCH_TYPES } from './search.config'
 
 // TODO: highlight search terms on results list
 // const HighlightedField = ({ string, query }) => {
@@ -11,6 +12,20 @@ import { getInputFields, replaceWithBreakingSpaces } from './search.utils'
 //   const fragments = string.replace(new RegExp(query, 'gi'), `<mark>${query}</mark>`)
 //   return <span dangerouslySetInnerHTML={{ __html: fragments }} /> // eslint-disable-line
 // }
+
+const getPlaceholderByType = (type: string): string => {
+  const prefix = 'Press ⏎ to'
+  switch (type) {
+    case SEARCH_TYPES.flag:
+      return `${prefix} see the activity of carriers from this flag state`
+    case SEARCH_TYPES.rfmo:
+      return `${prefix} see the activity that occurred in this RFMO area`
+    case SEARCH_TYPES.vessel:
+      return `${prefix} see the activity from this carrier`
+    default:
+      return `${prefix} select`
+  }
+}
 
 const getInputWithErrors = (input: string, selection: DataItem[]) => {
   if (!input) return ''
@@ -66,6 +81,9 @@ const Search: React.FC<SearchProps> = (props) => {
     onStateChange,
     loading,
   } = props
+  const itemsWithLoading = loading
+    ? [...items, { type: 'loading', id: 'loading', label: 'loading' }]
+    : items
   return (
     <Downshift
       onChange={onChange}
@@ -107,35 +125,58 @@ const Search: React.FC<SearchProps> = (props) => {
               />
             </div>
             {!isOpen ? null : (
-              <div className={styles.optionList}>
-                <FixedSizeList
-                  height={300}
-                  itemSize={20}
-                  itemCount={items.length}
-                  outerElementType="ul"
-                  {...getMenuProps()}
-                >
-                  {({ index, style }) => {
-                    const item = items[index]
-                    return (
-                      <li
-                        key={item.id}
-                        {...getItemProps({
-                          item,
-                          index,
-                        })}
-                        style={{
-                          ...style,
-                          backgroundColor: highlightedIndex === index ? '#ccc' : 'transparent',
-                          color: selectedItem === item ? '#0f0f0f' : '#000',
-                        }}
-                      >
-                        {item.type}: {itemToString(item)}
-                      </li>
-                    )
-                  }}
-                </FixedSizeList>
-                {loading === true && <span className={styles.loadingContainer}> loading...</span>}
+              <div className={styles.optionListContainer}>
+                {itemsWithLoading.length > 0 ? (
+                  <FixedSizeList
+                    height={300}
+                    itemSize={40}
+                    itemCount={itemsWithLoading.length}
+                    outerElementType="ul"
+                    className={styles.optionList}
+                    {...getMenuProps()}
+                  >
+                    {({ index, style }) => {
+                      const item = itemsWithLoading[index]
+                      if (item.type === 'loading') {
+                        return (
+                          <li
+                            key={item.id}
+                            className={styles.optionlistItemLoading}
+                            style={{ ...style }}
+                          >
+                            <span className={styles.spinner} />
+                          </li>
+                        )
+                      }
+                      return (
+                        <li
+                          key={item.id}
+                          className={styles.optionlistItem}
+                          {...getItemProps({
+                            item,
+                            index,
+                          })}
+                          style={{
+                            ...style,
+                            backgroundColor: highlightedIndex === index ? '#ccc' : 'transparent',
+                            color: selectedItem === item ? '#0f0f0f' : '#000',
+                          }}
+                        >
+                          {item.type}: {itemToString(item)}
+                          {highlightedIndex === index && (
+                            <span className={styles.optionlistItemPlaceholder}>
+                              {getPlaceholderByType(item.type)}
+                            </span>
+                          )}
+                        </li>
+                      )
+                    }}
+                  </FixedSizeList>
+                ) : (
+                  <span className={styles.optionlistItem}>
+                    There are no filters matching your query
+                  </span>
+                )}
               </div>
             )}
           </div>
