@@ -3,7 +3,7 @@ import styles from './search.module.css'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { FixedSizeList } from 'react-window'
 import { DataItem } from 'types/data'
-import { getInputFields, replaceWithBreakingSpaces } from './search.utils'
+import { getInputFields, replaceWithBreakingSpaces, removeSpecialCharacters } from './search.utils'
 import { SEARCH_TYPES } from './search.config'
 
 // TODO: highlight search terms on results list
@@ -20,6 +20,10 @@ const getPlaceholderByType = (type: string): string => {
       return `${prefix} see the activity of carriers from this flag state`
     case SEARCH_TYPES.rfmo:
       return `${prefix} see the activity that occurred in this RFMO area`
+    case SEARCH_TYPES.after:
+      return `${prefix} see the activity that occurred after this date`
+    case SEARCH_TYPES.before:
+      return `${prefix} see the activity that occurred before this date`
     case SEARCH_TYPES.vessel:
       return `${prefix} see the activity from this carrier`
     default:
@@ -29,21 +33,24 @@ const getPlaceholderByType = (type: string): string => {
 
 const getInputWithErrors = (input: string, selection: DataItem[]) => {
   if (!input) return ''
-  const selectionStrings = Array.from(
-    new Set([
-      ...selection.map((s) => replaceWithBreakingSpaces(s.label)),
-      ...selection.map((s) => s.type),
-    ])
-  )
+  const selectionStrings =
+    selection !== null
+      ? Array.from(
+          new Set([
+            ...selection.map((s) => replaceWithBreakingSpaces(s.label)),
+            ...selection.map((s) => s.type),
+          ])
+        )
+      : []
   const inputStrings = getInputFields(input)
   const incorrectInputStrings = inputStrings.filter(
     (i) => !selectionStrings.some((label) => label === i)
   )
-  let inputWithErrors = input
+  let inputWithErrors = removeSpecialCharacters(input)
   if (incorrectInputStrings.length) {
     incorrectInputStrings.forEach((incorrectInput) => {
       inputWithErrors = inputWithErrors.replace(
-        new RegExp(`\\b${incorrectInput}\\b`, 'g'),
+        new RegExp(`\\b${removeSpecialCharacters(incorrectInput)}\\b`, 'g'),
         `<span class=${styles.searchItemError}>${incorrectInput}</span>`
       )
     })

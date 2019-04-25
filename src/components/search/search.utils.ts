@@ -4,9 +4,15 @@ import { DataItem } from 'types/data'
 // Hack to look like spaces but be able to identify between input spaces and label spaces
 const breakingSpaceCharacter = '\u00a0'
 const breakingSpaceRegex = new RegExp(breakingSpaceCharacter, 'g')
-export const replaceWithBreakingSpaces = (string: string) =>
+export const replaceWithBreakingSpaces = (string: string = '') =>
   string.replace(/\s/gi, breakingSpaceCharacter)
-export const replaceWithNormalSpaces = (string: string) => string.replace(breakingSpaceRegex, ' ')
+export const replaceWithNormalSpaces = (string: string = '') =>
+  string.replace(breakingSpaceRegex, ' ')
+
+export const removeSpecialCharacters = (string: string): string => {
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
+  return string.replace(/[.*+?^${}/()|[\]\\]/g, '')
+}
 
 export const getInputFields = (input: string): string[] => {
   if (!input) return []
