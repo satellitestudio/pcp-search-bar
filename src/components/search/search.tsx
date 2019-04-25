@@ -1,6 +1,7 @@
 import React from 'react'
 import styles from './search.module.css'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
+import CountryFlag from '@globalfishingwatch/map-components/components/countryflag'
 import { FixedSizeList } from 'react-window'
 import { DataItem } from 'types/data'
 import { getInputFields, replaceWithBreakingSpaces, removeSpecialCharacters } from './search.utils'
@@ -169,7 +170,11 @@ const Search: React.FC<SearchProps> = (props) => {
                             color: selectedItem === item ? '#0f0f0f' : '#000',
                           }}
                         >
-                          {item.type}: {itemToString(item)}
+                          <div className={styles.optionListText}>
+                            {item.type}:{' '}
+                            {item.type === SEARCH_TYPES.flag && <CountryFlag iso={item.id} />}{' '}
+                            {itemToString(item)}
+                          </div>
                           {highlightedIndex === index && (
                             <span className={styles.optionlistItemPlaceholder}>
                               {getPlaceholderByType(item.type)}

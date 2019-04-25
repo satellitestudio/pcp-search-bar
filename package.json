@@ -4,6 +4,7 @@
   "private": true,
   "homepage": "https://satellitestudio.github.io/pcp-search-bar",
   "dependencies": {
+    "@globalfishingwatch/map-components": "^1.7.1",
     "@types/jest": "24.0.11",
     "@types/lodash": "^4.14.123",
     "@types/match-sorter": "^2.3.0",

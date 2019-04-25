@@ -6,6 +6,7 @@ import { DataItem } from './types/data'
 import { groupSelectionsByType } from './components/search/search.utils'
 import { DataSelectionGrouped } from './components/search/search.types'
 import { SEARCH_TYPES } from './components/search/search.config'
+import CountryFlag from '@globalfishingwatch/map-components/components/countryflag'
 import data from './data/data'
 
 const capitalizeFirst = (string: string): string => string.charAt(0).toUpperCase() + string.slice(1)
@@ -40,6 +41,7 @@ const App: React.FC = (): React.ReactElement => {
                 {selections[key] !== undefined ? (
                   selections[key].values.map((value, index) => (
                     <span key={value.id}>
+                      {key === SEARCH_TYPES.flag && <CountryFlag iso={value.id} />}
                       {value.label}({value.id})
                       {index === selections[key].values.length - 1 ? '' : ','}
                     </span>
