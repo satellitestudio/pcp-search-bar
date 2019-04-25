@@ -32,7 +32,7 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
         })
       }
     },
-    []
+    [dispatch, onChange]
   )
 
   const handleConfirmSelection = (
@@ -63,23 +63,29 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
       : []
   }
 
-  const handleChangeInput = (
-    state: DownshiftState<DataItem[]>,
-    changes: StateChangeOptions<DataItem[]>
-  ): StateChangeOptions<DataItem[]> => {
-    const inputValue = changes.inputValue || ''
-    const selectedItems = state.selectedItem || []
-    const selectedOptions = uniqBy([...selectedItems, ...cachedResults], 'id')
-    const selectedItem = getSelectedItemsByInput(inputValue, selectedOptions)
-    const cursorPosition = calculateCursorPosition(changes.inputValue || '', state.inputValue || '')
-    dispatch({ type: 'setCursorPosition', payload: cursorPosition })
+  const handleChangeInput = useCallback(
+    (
+      state: DownshiftState<DataItem[]>,
+      changes: StateChangeOptions<DataItem[]>
+    ): StateChangeOptions<DataItem[]> => {
+      const inputValue = changes.inputValue || ''
+      const selectedItems = state.selectedItem || []
+      const selectedOptions = uniqBy([...selectedItems, ...cachedResults], 'id')
+      const selectedItem = getSelectedItemsByInput(inputValue, selectedOptions)
+      const cursorPosition = calculateCursorPosition(
+        changes.inputValue || '',
+        state.inputValue || ''
+      )
+      dispatch({ type: 'setCursorPosition', payload: cursorPosition })
 
-    return {
-      ...changes,
-      selectedItem,
-      isOpen: inputValue !== '' && inputValue[cursorPosition] !== ',',
-    }
-  }
+      return {
+        ...changes,
+        selectedItem,
+        isOpen: inputValue !== '' && inputValue[cursorPosition] !== ',',
+      }
+    },
+    [cachedResults, dispatch]
+  )
 
   const stateReducer = useCallback(
     (
@@ -102,7 +108,7 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
           return { ...changes, inputValue: changes.inputValue || state.inputValue || '' }
       }
     },
-    [cachedResults]
+    [handleChangeInput]
   )
 
   const customKeyDownHandler = useCallback(
@@ -130,7 +136,7 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
         }
       }
     },
-    [results]
+    [dispatch, results]
   )
 
   const itemToString = useCallback((i: DataItem): string => {
@@ -139,7 +145,7 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
 
   const initialInputValue = useMemo((): string => {
     return initialSelection !== null ? parseSelectionToInput(initialSelection) : ''
-  }, [])
+  }, [initialSelection])
 
   return (
     <SearchComponent
