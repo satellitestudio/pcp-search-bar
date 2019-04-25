@@ -18,7 +18,7 @@
     "qs": "^6.7.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "react-scripts": "2.1.8",
+    "react-scripts": "3.0.0",
     "react-window": "^1.8.1",
     "typescript": "3.4.3"
   },
@@ -33,14 +33,16 @@
   "browserslist": [
     ">0.2%",
     "not dead",
-    "not ie <= 11",
+    "not ie < 11",
     "not op_mini all"
   ],
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^1.6.0",
-    "@typescript-eslint/parser": "^1.6.0",
+    "@satellitestudio/eslint-config": "1.1.0",
+    "@typescript-eslint/eslint-plugin": "^1.7.0",
+    "@typescript-eslint/parser": "^1.7.0",
+    "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.1.0",
-    "eslint-config-react-app": "^3.0.8",
+    "eslint-config-react-app": "^4.0.0",
     "eslint-plugin-flowtype": "^3.6.1",
     "eslint-plugin-import": "^2.17.2",
     "eslint-plugin-jsx-a11y": "^6.2.1",

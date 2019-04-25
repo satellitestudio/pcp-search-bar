@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback, useState } from 'react'
+import qs from 'qs'
 import styles from './app.module.css'
 import Search from './components/search/search.container'
-import qs from 'qs'
 import { DataItem } from './types/data'
 import { groupSelectionsByType } from './components/search/search.utils'
 import { DataSelectionGrouped } from './components/search/search.types'
@@ -15,6 +15,7 @@ const App: React.FC = (): React.ReactElement => {
     const query = qs.parse(window.location.search, { ignoreQueryPrefix: true })
     return query && query.search ? query.search : []
   }, [])
+
   const [selections, updateSelection] = useState<DataSelectionGrouped>(
     groupSelectionsByType(urlSelection || [])
   )

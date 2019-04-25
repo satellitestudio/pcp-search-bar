@@ -1,7 +1,7 @@
 import { useEffect, useReducer } from 'react'
 import matchSorter from 'match-sorter'
-import { DataItem } from '../../types/data'
-import { VesselAPIResult } from '../../types/api'
+import { DataItem } from 'types/data'
+import { VesselAPIResult } from 'types/api'
 import { replaceWithNormalSpaces, getInputFields } from './search.utils'
 import { searchTypesList, asyncFields } from './search.config'
 import uniqBy from 'lodash/uniqBy'
@@ -167,6 +167,6 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
         })
       return () => controller.abort()
     }
-  }, [search, cursorPosition])
+  }, [search, cursorPosition, selectedItem])
   return [state, dispatch]
 }

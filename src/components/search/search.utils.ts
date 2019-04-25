@@ -1,5 +1,5 @@
 import { DataSelectionGrouped, DataSelection, DataValue } from './search.types'
-import { DataItem } from '../../types/data'
+import { DataItem } from 'types/data'
 
 // Hack to look like spaces but be able to identify between input spaces and label spaces
 const breakingSpaceCharacter = '\u00a0'

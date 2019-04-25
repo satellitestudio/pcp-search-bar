@@ -2,7 +2,7 @@ import React from 'react'
 import styles from './search.module.css'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { FixedSizeList } from 'react-window'
-import { DataItem } from '../../types/data'
+import { DataItem } from 'types/data'
 import { getInputFields, replaceWithBreakingSpaces } from './search.utils'
 
 // TODO: highlight search terms on results list

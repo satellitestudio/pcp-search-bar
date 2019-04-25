@@ -3,7 +3,7 @@ import SearchComponent from './search'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { useResultsFiltered } from './search.hooks'
 
-import { DataItem } from '../../types/data'
+import { DataItem } from 'types/data'
 import { parseSelectionToInput, calculateCursorPosition, parseInputToFields } from './search.utils'
 import uniqBy from 'lodash/uniqBy'
 
