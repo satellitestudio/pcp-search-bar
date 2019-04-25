@@ -6,6 +6,7 @@ import { useResultsFiltered } from './search.hooks'
 import { DataItem } from 'types/data'
 import { parseSelectionToInput, calculateCursorPosition, parseInputToFields } from './search.utils'
 import uniqBy from 'lodash/uniqBy'
+import { singleSelectionFields } from './search.config'
 
 interface SearchContainerProps {
   initialSelection: DataItem[]
@@ -41,10 +42,19 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
     lastCharacter: string = ' '
   ): StateChangeOptions<any> => {
     const currentItems = state.selectedItem || []
-    const alreadySelected = currentItems.find(
-      (item: DataItem) => item.id === changes.selectedItem.id
+    const isAlreadySelectedType = currentItems.some(
+      (item: DataItem) => item.type === changes.selectedItem.type
     )
-    const selectedItem = alreadySelected ? currentItems : [...currentItems, changes.selectedItem]
+    const isSingleSelectionField = singleSelectionFields.includes(changes.selectedItem.type)
+    let selectedItem = [...currentItems]
+
+    if ((isSingleSelectionField && !isAlreadySelectedType) || !isSingleSelectionField) {
+      selectedItem.push(changes.selectedItem)
+    } else {
+      selectedItem = selectedItem.map((s) => {
+        return s.type === changes.selectedItem.type ? changes.selectedItem : s
+      })
+    }
 
     // Adding a space at the end to start with a clean search when press enter
     const inputValue = parseSelectionToInput(selectedItem, lastCharacter)
@@ -105,7 +115,11 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
         }
         default:
           // Avoids warning on uncontrolled input value
-          return { ...changes, inputValue: changes.inputValue || state.inputValue || '' }
+          return {
+            ...changes,
+            inputValue: changes.inputValue || state.inputValue || '',
+            selectedItem: changes.selectedItem || state.selectedItem || [],
+          }
       }
     },
     [handleChangeInput]

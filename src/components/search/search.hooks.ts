@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react'
-import matchSorter from 'match-sorter'
+import matchSorter, { rankings } from 'match-sorter'
 import { DataItem } from 'types/data'
 import { VesselAPIResult } from 'types/api'
 import { replaceWithNormalSpaces, getInputFields } from './search.utils'
@@ -72,7 +72,12 @@ const getItemsFiltered = (
     selectedItemIds.length > 0 ? items.filter((i) => !selectedItemIds.includes(i.id)) : items
 
   return searchFields.reduce((acc, cleanValue) => {
-    return matchSorter(acc, cleanValue, { keys: ['label', 'type'] })
+    return matchSorter(acc, cleanValue, {
+      keys: [
+        { key: 'type', threshold: rankings.EQUAL },
+        { key: 'label', threshold: rankings.STARTS_WITH },
+      ],
+    })
   }, itemsNotSelected)
 }
 
