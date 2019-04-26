@@ -2,11 +2,12 @@ import React, { useMemo, useCallback, useState } from 'react'
 import qs from 'qs'
 import styles from './app.module.css'
 import Search from './components/search/search.container'
+import MultiSelect from './components/multi-select/multi-select'
 import { DataItem } from './types/data'
 import { groupSelectionsByType } from './components/search/search.utils'
 import { SEARCH_TYPES } from './components/search/search.config'
 import CountryFlag from '@globalfishingwatch/map-components/components/countryflag'
-import data, { flags, rfmos, after, before } from './data/data'
+import data, { flags, rfmos } from './data/data'
 
 const capitalizeFirst = (string: string): string => string.charAt(0).toUpperCase() + string.slice(1)
 
@@ -25,18 +26,6 @@ const App: React.FC = (): React.ReactElement => {
     window.history.replaceState(window.history.state, '', url)
   }, [])
 
-  const addExternalSelection = () => {
-    updateSelection([
-      ...selections,
-      rfmos[Math.floor(Math.random() * rfmos.length - 1) + 1],
-      flags[Math.floor(Math.random() * flags.length - 1) + 1],
-      flags[Math.floor(Math.random() * flags.length - 1) + 1],
-      after[Math.floor(Math.random() * after.length - 1) + 1],
-      after[Math.floor(Math.random() * after.length - 1) + 1],
-      before[Math.floor(Math.random() * before.length - 1) + 1],
-    ])
-  }
-
   const removeExternalSelection = () => {
     updateSelection([])
   }
@@ -45,11 +34,39 @@ const App: React.FC = (): React.ReactElement => {
     return groupSelectionsByType(selections || [])
   }, [selections])
 
+  const handleSelectChange = (selectedItem: DataItem) => {
+    updateSelection([...selections, selectedItem])
+  }
+
+  const handleRemoveItem = (item: DataItem) => {
+    updateSelection(selections.filter((i) => i !== item))
+  }
+
+  const getSelectionByType = (type: string) => {
+    const selection = selections.filter((s) => s.type === type)
+    return selection
+  }
+
   return (
     <div className={styles.app}>
       <Search staticOptions={data} selectedItems={selections} onChange={handleChange} />
-      <button onClick={addExternalSelection}>Add selection</button>
-      <button onClick={removeExternalSelection}>Remove selection</button>
+      <div>
+        <button onClick={removeExternalSelection}>Remove selection</button>
+      </div>
+      <div>
+        <MultiSelect
+          options={flags}
+          selectedItems={getSelectionByType('flag')}
+          onSelectedItem={handleSelectChange}
+          onRemoveItem={handleRemoveItem}
+        />
+        <MultiSelect
+          options={rfmos}
+          selectedItems={getSelectionByType('rfmo')}
+          onSelectedItem={handleSelectChange}
+          onRemoveItem={handleRemoveItem}
+        />
+      </div>
       <div className={styles.selectionContainer}>
         <h2>Current filter selection by</h2>
         {selectionsByType !== null ? (
