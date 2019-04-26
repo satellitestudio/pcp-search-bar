@@ -1,0 +1,55 @@
+.container {
+  width: 300px;
+  position: relative;
+  display: inline-block;
+}
+
+.selectionsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.selectionItem {
+  margin: 2;
+  padding-top: 2;
+  padding-bottom: 2;
+  padding-left: 8;
+  padding-right: 8;
+  display: inline-block;
+  word-wrap: none;
+  background-color: #ccc;
+  border-radius: 2;
+}
+
+.selectionItemRemoveBtn {
+  cursor: pointer;
+  line-height: 0.8;
+  border: none;
+  background-color: transparent;
+  padding: 0;
+  font-size: 16px;
+}
+
+.inputText {
+  border: none;
+  margin-left: 6;
+  flex: 1;
+  font-size: 14;
+  min-height: 27;
+}
+
+.toggleBtn {
+  background-color: transparent;
+  border: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+  cursor: pointer;
+  width: 47;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+}
