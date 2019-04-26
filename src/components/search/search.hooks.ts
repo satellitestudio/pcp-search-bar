@@ -5,6 +5,7 @@ import { VesselAPIResult } from 'types/api'
 import { replaceWithNormalSpaces, getInputFields } from './search.utils'
 import { searchTypesList, asyncFields } from './search.config'
 import uniqBy from 'lodash/uniqBy'
+import memoizeOne from 'memoize-one'
 
 const parseSearchFieldsInput = (
   input: string,
@@ -58,6 +59,23 @@ const parseSearchFieldsInput = (
   return Array.from(new Set(searchFields))
 }
 
+// TODO: review mem issues and think on memoize only one
+const filterOptionBySearchFields = memoizeOne(
+  (searchFields: string[], itemsNotSelected: DataItem[]) =>
+    searchFields.reduce((acc, cleanValue) => {
+      return matchSorter(acc, cleanValue, {
+        keys: [
+          { key: 'type', threshold: rankings.EQUAL },
+          { key: 'label', threshold: rankings.WORD_STARTS_WITH },
+        ],
+      })
+    }, itemsNotSelected)
+)
+
+const filterItemsNotSelected = memoizeOne((items: DataItem[], selectedItemIds: string[]) => {
+  return selectedItemIds.length > 0 ? items.filter((i) => !selectedItemIds.includes(i.id)) : items
+})
+
 const getItemsFiltered = (
   items: DataItem[],
   input: string,
@@ -68,17 +86,9 @@ const getItemsFiltered = (
   let selectedItemIds = (selectedItems && selectedItems.map((i) => i.id)) || []
 
   const searchFields = parseSearchFieldsInput(input, selectedItems, cursorPosition)
-  const itemsNotSelected =
-    selectedItemIds.length > 0 ? items.filter((i) => !selectedItemIds.includes(i.id)) : items
-
-  return searchFields.reduce((acc, cleanValue) => {
-    return matchSorter(acc, cleanValue, {
-      keys: [
-        { key: 'type', threshold: rankings.EQUAL },
-        { key: 'label', threshold: rankings.STARTS_WITH },
-      ],
-    })
-  }, itemsNotSelected)
+  const itemsNotSelected = filterItemsNotSelected(items, selectedItemIds)
+  const results = filterOptionBySearchFields(searchFields, itemsNotSelected)
+  return results
 }
 
 interface ResultsAction {

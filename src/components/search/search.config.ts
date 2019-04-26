@@ -4,6 +4,7 @@ export const SEARCH_TYPES = {
   vessel: 'vessel',
   after: 'after',
   before: 'before',
+  port: 'port',
 }
 
 export const searchTypesList = [SEARCH_TYPES.flag, SEARCH_TYPES.rfmo, SEARCH_TYPES.vessel]

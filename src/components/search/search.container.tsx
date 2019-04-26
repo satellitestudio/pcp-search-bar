@@ -5,6 +5,7 @@ import { useResultsFiltered } from './search.hooks'
 
 import { DataItem } from 'types/data'
 import { parseSelectionToInput, calculateCursorPosition, parseInputToFields } from './search.utils'
+import debounce from 'lodash/debounce'
 import uniqBy from 'lodash/uniqBy'
 import { singleSelectionFields } from './search.config'
 
@@ -19,18 +20,23 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
   const [state, dispatch] = useResultsFiltered(staticOptions, '')
   const { results, loading, cachedResults } = state
 
+  const debouncedDispatchChange = useMemo(
+    () =>
+      debounce((payload) => {
+        dispatch({ type: 'inputChange', payload })
+      }, 100),
+    [dispatch]
+  )
+
   const handleStateChange = useCallback(
     (changes: StateChangeOptions<DataItem[]>, downshiftState: DownshiftState<DataItem[]>) => {
       if (changes.hasOwnProperty('inputValue')) {
         const { inputValue = '', selectedItem } = downshiftState
         const inputValueString = inputValue || ''
-        dispatch({
-          type: 'inputChange',
-          payload: { search: inputValueString, selectedItem },
-        })
+        debouncedDispatchChange({ search: inputValueString, selectedItem })
       }
     },
-    [dispatch]
+    [debouncedDispatchChange]
   )
 
   const handleConfirmSelection = (
