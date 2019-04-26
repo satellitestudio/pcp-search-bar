@@ -12,3 +12,5 @@ const before: DataItem[] = days.map((before) => ({ ...before, type: SEARCH_TYPES
 before.push({ ...lastDate, type: SEARCH_TYPES.before })
 
 export default [...rfmos, ...flags, ...after, ...before]
+
+export { rfmos, flags, after, before }

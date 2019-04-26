@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useRef, useEffect } from 'react'
 import SearchComponent from './search'
 import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import { useResultsFiltered } from './search.hooks'
@@ -9,13 +9,13 @@ import uniqBy from 'lodash/uniqBy'
 import { singleSelectionFields } from './search.config'
 
 interface SearchContainerProps {
-  initialSelection: DataItem[]
+  selectedItems: DataItem[]
   staticOptions: DataItem[]
-  onChange(selectedItems: DataItem[], inputValue: string): void
+  onChange(selectedItems: DataItem[]): void
 }
 
 const SearchContainer: React.FC<SearchContainerProps> = (props) => {
-  const { initialSelection, onChange, staticOptions } = props
+  const { selectedItems, onChange, staticOptions } = props
   const [state, dispatch] = useResultsFiltered(staticOptions, '')
   const { results, loading, cachedResults } = state
 
@@ -24,16 +24,13 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
       if (changes.hasOwnProperty('inputValue')) {
         const { inputValue = '', selectedItem } = downshiftState
         const inputValueString = inputValue || ''
-        if (selectedItem !== null) {
-          onChange(selectedItem, inputValueString)
-        }
         dispatch({
           type: 'inputChange',
           payload: { search: inputValueString, selectedItem },
         })
       }
     },
-    [dispatch, onChange]
+    [dispatch]
   )
 
   const handleConfirmSelection = (
@@ -73,6 +70,30 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
       : []
   }
 
+  const handleExternalChanges = useCallback(
+    (
+      state: DownshiftState<DataItem[]>,
+      changes: StateChangeOptions<DataItem[]>
+    ): StateChangeOptions<DataItem[]> => {
+      const typesIncluded: { [string: string]: boolean } = {}
+      if (!changes.selectedItem || !state.selectedItem) return changes
+      if (state.selectedItem.length === changes.selectedItem.length) {
+        return changes
+      }
+      const uniqueSelections = uniqBy(changes.selectedItem, 'id')
+      const selectedItem = uniqueSelections.filter((item) => {
+        if (!item) return false
+        if (typesIncluded[item.type] !== undefined) {
+          return !singleSelectionFields.includes(item.type)
+        }
+        typesIncluded[item.type] = true
+        return true
+      })
+      const inputValue = parseSelectionToInput(selectedItem)
+      return { ...changes, inputValue, selectedItem }
+    },
+    []
+  )
   const handleChangeInput = useCallback(
     (
       state: DownshiftState<DataItem[]>,
@@ -110,6 +131,9 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
         case 'keyDownComa': {
           return handleConfirmSelection(state, changes, '')
         }
+        case 'externalChanges': {
+          return handleExternalChanges(state, changes)
+        }
         case Downshift.stateChangeTypes.changeInput: {
           return handleChangeInput(state, changes)
         }
@@ -122,10 +146,10 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
           }
       }
     },
-    [handleChangeInput]
+    [handleChangeInput, handleExternalChanges]
   )
 
-  const customKeyDownHandler = useCallback(
+  const customEventHandler = useCallback(
     (event: any, downshift: any) => {
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.type === 'click') {
         const cursorPosition = event.target.selectionStart
@@ -158,18 +182,41 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
   }, [])
 
   const initialInputValue = useMemo((): string => {
-    return initialSelection !== null ? parseSelectionToInput(initialSelection) : ''
-  }, [initialSelection])
+    return selectedItems !== null ? parseSelectionToInput(selectedItems) : ''
+  }, [selectedItems])
+
+  const initialSelection = useMemo((): DataItem[] => {
+    return selectedItems || []
+  }, [selectedItems])
+
+  const downshiftRef = useRef<any | null>(null)
+  const setDownshiftRef = useCallback((downshift: any): void => {
+    downshiftRef.current = downshift
+  }, [])
+
+  useEffect(() => {
+    if (downshiftRef.current !== null) {
+      const { setState } = downshiftRef.current
+      setState({
+        type: 'externalChanges',
+        selectedItem: selectedItems,
+      })
+    }
+  }, [selectedItems])
 
   return (
     <SearchComponent
       items={results}
       loading={loading}
+      onChange={onChange}
+      setDownshiftRef={setDownshiftRef}
+      downshiftRefLoaded={downshiftRef.current !== null}
       itemToString={itemToString}
       stateReducer={stateReducer}
-      initialInputValue={initialInputValue}
+      selectedItems={selectedItems}
       initialSelection={initialSelection}
-      onKeyDown={customKeyDownHandler}
+      initialInputValue={initialInputValue}
+      customEventHandler={customEventHandler}
       onStateChange={handleStateChange}
     />
   )

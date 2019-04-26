@@ -1,6 +1,6 @@
 import React from 'react'
 import styles from './search.module.css'
-import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
+import Downshift, { DownshiftState, StateChangeOptions, ControllerStateAndHelpers } from 'downshift'
 import CountryFlag from '@globalfishingwatch/map-components/components/countryflag'
 import { FixedSizeList } from 'react-window'
 import { DataItem } from 'types/data'
@@ -62,11 +62,14 @@ const getInputWithErrors = (input: string, selection: DataItem[]) => {
 interface SearchProps {
   items: DataItem[]
   loading?: boolean
+  setDownshiftRef(downshift: ControllerStateAndHelpers<any>): void
+  downshiftRefLoaded: boolean
   initialInputValue?: string
   initialSelection?: DataItem[]
+  selectedItems?: DataItem[]
   itemToString(obj: DataItem): string
   onChange?(selectedItems: DataItem[], downshiftState: any): void
-  onKeyDown?(event: React.SyntheticEvent, downshiftState: DownshiftState<DataItem[]>): void
+  customEventHandler?(event: React.SyntheticEvent, downshiftState: DownshiftState<DataItem[]>): void
   stateReducer(
     state: DownshiftState<DataItem[]>,
     changes: StateChangeOptions<DataItem[]>
@@ -80,10 +83,12 @@ interface SearchProps {
 const Search: React.FC<SearchProps> = (props) => {
   const {
     itemToString,
+    setDownshiftRef,
+    downshiftRefLoaded,
     initialInputValue,
     initialSelection,
     onChange,
-    onKeyDown,
+    customEventHandler,
     stateReducer,
     items,
     onStateChange,
@@ -103,6 +108,9 @@ const Search: React.FC<SearchProps> = (props) => {
       defaultHighlightedIndex={0}
     >
       {(downshift) => {
+        if (downshiftRefLoaded === false) {
+          setDownshiftRef(downshift)
+        }
         const {
           getInputProps,
           getMenuProps,
@@ -125,9 +133,13 @@ const Search: React.FC<SearchProps> = (props) => {
                 {...getInputProps({
                   placeholder: 'Start searching',
                   onKeyDown:
-                    onKeyDown !== undefined ? (event) => onKeyDown(event, downshift) : undefined,
+                    customEventHandler !== undefined
+                      ? (event) => customEventHandler(event, downshift)
+                      : undefined,
                   onClick:
-                    onKeyDown !== undefined ? (event) => onKeyDown(event, downshift) : undefined,
+                    customEventHandler !== undefined
+                      ? (event) => customEventHandler(event, downshift)
+                      : undefined,
                 })}
                 spellCheck={false}
               />
