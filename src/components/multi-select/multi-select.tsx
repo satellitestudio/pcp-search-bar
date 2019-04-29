@@ -1,5 +1,5 @@
 import React from 'react'
-import Downshift, { DownshiftInterface } from 'downshift'
+import Downshift, { DownshiftState, StateChangeOptions } from 'downshift'
 import styles from './multi-select.module.css'
 import matchSorter from 'match-sorter'
 import { DataItem } from 'types/data'
@@ -23,7 +23,10 @@ class MultiSelect extends React.Component<MultiSelectProps> {
       : this.props.options
   }
 
-  stateReducer = (state: { highlightedIndex: any }, changes: { type: any }) => {
+  stateReducer(
+    state: DownshiftState<DataItem[]>,
+    changes: StateChangeOptions<DataItem[]>
+  ): StateChangeOptions<DataItem[]> {
     switch (changes.type) {
       case Downshift.stateChangeTypes.keyDownEnter:
       case Downshift.stateChangeTypes.clickItem:
@@ -128,7 +131,7 @@ class MultiSelect extends React.Component<MultiSelectProps> {
                   </svg>
                 </button>
               </div>
-              <ul {...getMenuProps()}>
+              <ul {...getMenuProps()} className={styles.listContainer}>
                 {isOpen
                   ? this.getItems(inputValue).map((item, index) => (
                       <li
