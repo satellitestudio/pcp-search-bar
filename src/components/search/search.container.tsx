@@ -83,6 +83,7 @@ const SearchContainer: React.FC<SearchContainerProps> = (props) => {
     ): StateChangeOptions<DataItem[]> => {
       const typesIncluded: { [string: string]: boolean } = {}
       if (!changes.selectedItem || !state.selectedItem) return changes
+      // TODO: has a more accurate comparison
       if (state.selectedItem.length === changes.selectedItem.length) {
         return changes
       }

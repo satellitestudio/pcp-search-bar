@@ -11,7 +11,7 @@ const parseSearchFieldsInput = (
   input: string,
   selectedItems: DataItem[],
   cursorPosition: number
-) => {
+): string[] => {
   const selectedItemTypes = (selectedItems && selectedItems.map((i) => i.type)) || []
   const selectedItemLabels = (selectedItems && selectedItems.map((i) => i.label)) || []
   const existingSearchTypes: { [type: string]: boolean } = {}
@@ -55,11 +55,9 @@ const parseSearchFieldsInput = (
       searchFields.push(currentType)
     }
   }
-
   return Array.from(new Set(searchFields))
 }
 
-// TODO: review mem issues and think on memoize only one
 const filterOptionBySearchFields = memoizeOne(
   (searchFields: string[], itemsNotSelected: DataItem[]) =>
     searchFields.reduce((acc, cleanValue) => {
@@ -110,16 +108,20 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
   const initialState: ResultsState = {
     loading: false,
     staticData,
-    selectedItem: [],
-    cursorPosition: 0,
+    selectedItem: [], // TODO: use the initial selection from url
+    cursorPosition: 0, // Calculate on init render
     search: initialValue || '',
-    results: staticData,
+    results: staticData, // Filter if initial value exists
     cachedResults: staticData,
   }
   const resultsReducer = (state: ResultsState, action: ResultsAction): ResultsState => {
     switch (action.type) {
       case 'inputChange':
-        return { ...state, ...action.payload }
+        return {
+          ...state,
+          search: action.payload.search,
+          selectedItem: action.payload.selectedItem,
+        }
       case 'setCursorPosition':
         return { ...state, cursorPosition: action.payload }
       case 'startSearch': {
@@ -144,6 +146,7 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
   }
   const [state, dispatch] = useReducer(resultsReducer, initialState)
   const { search, selectedItem, cursorPosition } = state
+
   useEffect(() => {
     const searchFields = parseSearchFieldsInput(search, selectedItem, cursorPosition)
     const searchFieldsTypes = searchFields.filter((f) => searchTypesList.includes(f))
@@ -157,6 +160,7 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
     const asyncNeeded = needsRequest && searchQuery !== ''
     dispatch({ type: 'startSearch', payload: asyncNeeded })
     if (asyncNeeded) {
+      // Check polyfill for this
       const controller = new AbortController()
       const searchUrl = `https://vessels-dot-world-fishing-827.appspot.com/datasets/indonesia/vessels?query=${searchQuery}&offset=0`
 
@@ -183,5 +187,6 @@ export const useResultsFiltered = (staticData: DataItem[], initialValue?: string
       return () => controller.abort()
     }
   }, [search, cursorPosition, selectedItem])
+
   return [state, dispatch]
 }

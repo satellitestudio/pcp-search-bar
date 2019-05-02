@@ -7,6 +7,12 @@ export const SEARCH_TYPES = {
   port: 'port',
 }
 
-export const searchTypesList = [SEARCH_TYPES.flag, SEARCH_TYPES.rfmo, SEARCH_TYPES.vessel]
+export const searchTypesList = [
+  SEARCH_TYPES.flag,
+  SEARCH_TYPES.rfmo,
+  SEARCH_TYPES.vessel,
+  SEARCH_TYPES.after,
+  SEARCH_TYPES.before,
+]
 export const asyncFields = [SEARCH_TYPES.vessel]
 export const singleSelectionFields = [SEARCH_TYPES.after, SEARCH_TYPES.before]

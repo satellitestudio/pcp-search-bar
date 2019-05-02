@@ -21,6 +21,7 @@
   color: transparent;
   text-decoration: underline;
   padding: 12px; /* padding + border input */
+  letter-spacing: 0.16px;
 }
 
 .searchItemError {
