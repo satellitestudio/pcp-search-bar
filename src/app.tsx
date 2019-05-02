@@ -7,9 +7,9 @@ import { Router } from '@reach/router'
 const App: React.FC = (): React.ReactElement => {
   return (
     <Router>
-      <Home path="/" default />
-      <Search path="search" />
-      <HistorySroll path="scrolling" />
+      <Home path={`${process.env.PUBLIC_URL}/`} default />
+      <Search path={`${process.env.PUBLIC_URL}/search`} />
+      <HistorySroll path={`${process.env.PUBLIC_URL}/scrolling`} />
     </Router>
   )
 }

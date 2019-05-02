@@ -7,8 +7,8 @@ const Home: React.FC<RouteComponentProps> = (): React.ReactElement => {
     <Fragment>
       <h1 className={styles.title}>Pew Carrier Portal prototypes</h1>
       <nav className={styles.nav}>
-        <Link to="search">Search</Link>
-        <Link to="scrolling">History scroll</Link>
+        <Link to={`${process.env.PUBLIC_URL}/search`}>Search</Link>
+        <Link to={`${process.env.PUBLIC_URL}/scrolling`}>History scroll</Link>
       </nav>
     </Fragment>
   )
