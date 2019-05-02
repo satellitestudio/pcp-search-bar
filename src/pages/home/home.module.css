@@ -1,0 +1,12 @@
+.title {
+  padding: 1rem;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav a {
+  padding: 1rem;
+}
