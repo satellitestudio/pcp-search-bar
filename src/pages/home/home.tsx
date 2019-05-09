@@ -9,6 +9,7 @@ const Home: React.FC<RouteComponentProps> = (): React.ReactElement => {
       <nav className={styles.nav}>
         <Link to={`${process.env.PUBLIC_URL}/search`}>Search</Link>
         <Link to={`${process.env.PUBLIC_URL}/scrolling`}>History scroll</Link>
+        <Link to={`${process.env.PUBLIC_URL}/map-navigation`}>Map navigation</Link>
       </nav>
     </Fragment>
   )
