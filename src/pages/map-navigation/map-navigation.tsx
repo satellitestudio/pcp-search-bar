@@ -1,78 +1,80 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from '@reach/router'
 import MapModule from '@globalfishingwatch/map-components/components/map'
 import bearing from '@turf/bearing'
+import { point } from '@turf/helpers'
 import { bearingToAzimuth } from '@turf/helpers'
-import { throttle } from 'lodash'
 import styles from './map-navigation.module.css'
 import track from './track-data'
 
 const tracks = [track]
 
-// var origin = track.data.features[0].geometry.coordinates[0]
-// const iconLayer = {
-//   title: 'Navigation icon layer',
-//   type: 'mapboxgl',
-//   id: 'navigation_icon',
-//   visible: true,
-//   opacity: 1,
-//   gl: {
-//     source: {
-//       type: 'geojson',
-//       data: {
-//         type: 'FeatureCollection',
-//         features: [
-//           {
-//             type: 'Feature',
-//             properties: {
-//               bearing: 0,
-//             },
-//             geometry: {
-//               type: 'Point',
-//               coordinates: origin,
-//             },
-//           },
-//         ],
-//       },
-//     },
-//     layers: [
-//       {
-//         id: 'navigation-icon-layer',
-//         // source: 'navigation_icon',
-//         type: 'symbol',
-//         // paint: {
-//         //   'circle-radius': 10,
-//         //   'circle-color': '#007cbf',
-//         // },
-//         layout: {
-//           'icon-image': 'port',
-//           'icon-rotate': ['get', 'bearing'],
-//           'icon-rotation-alignment': 'map',
-//           'icon-allow-overlap': true,
-//           'icon-ignore-placement': true,
-//         },
-//       },
-//     ],
-//   },
-// }
+const getCoordinatesFromTimestamp = (track: any, timestamp: number) => {
+  const coordinates = track.data.features[0].geometry.coordinates[1]
+  return [coordinates[1], coordinates[0]]
+}
 
-const useViewportByStep = (initialViewport: object, track: any) => {
-  const [step, setStep] = useState<number>(0)
-  const [viewport, setViewport] = useState<any>(initialViewport)
+const getNextEventsCoordinates = (track: any, timestamp: number) => {
   const { coordinates } = track.data.features[0].geometry
+  // Calculate next event to get bearing
+  const nextStepCoordinates = 0 < coordinates.length - 1 ? coordinates[0 + 1] : coordinates[0]
+  return [nextStepCoordinates[1], nextStepCoordinates[0]]
+}
+
+const getNextCenterPosition = (track: any, currentPosition: any, destination?: any) => {
+  const index = destination === undefined ? 0 : 1
+  const coordinates = track.data.features[0].geometry.coordinates[index]
+  const center = [coordinates[1], coordinates[0]]
+  return center
+}
+
+const useCenterByTimestamp = (track: any, timestamp: number) => {
+  const { coordinates } = track.data.features[0].geometry
+  const center = useMemo(() => getNextCenterPosition(track, coordinates[0]), [coordinates, track])
+  // Calculate next event to get bearing
+  const nextEvent = useMemo(() => getNextEventsCoordinates(track, timestamp), [timestamp, track])
+  const [state, setState] = useState<{ center: number[]; bearingAngle: number }>({
+    center,
+    bearingAngle: bearingToAzimuth(bearing(point(center), point(nextEvent))),
+  })
 
   useEffect(() => {
-    const throttleUpdate = throttle((step) => setStep(step), 100)
+    const updateViewport = () => {
+      const destination = getCoordinatesFromTimestamp(track, timestamp)
+      if (state.center[0] !== destination[0] && state.center[1] !== destination[1]) {
+        const center = getNextCenterPosition(track, state.center, destination)
+        console.log('TCL: updateViewport -> center', center)
+        const bearingAngle = bearingToAzimuth(bearing(point(center), point(nextEvent)))
+        setState({ center, bearingAngle })
+      } else {
+        console.log('FINISHED')
+      }
+    }
+    const requestAnimationFrame = window.requestAnimationFrame(updateViewport)
+    return () => {
+      window.cancelAnimationFrame(requestAnimationFrame)
+    }
+  }, [nextEvent, state.center, timestamp, track])
+  return { ...state }
+}
+
+const viewport = { zoom: 11, center: [1.6, 105] }
+
+const useTimestampEvent = (track: any, initialStep: number) => {
+  const { times } = track.data.features[0].properties.coordinateProperties
+  const [step, setStep] = useState<number>(initialStep)
+  useEffect(() => {
+    const { coordinates } = track.data.features[0].geometry
     const handleKeyDown = (event: KeyboardEvent) => {
       event.preventDefault()
       event.stopPropagation()
       if (event.key === 'ArrowUp') {
         if (step < coordinates.length - 1) {
-          throttleUpdate(step + 1)
+          setStep(step + 1)
         }
       } else if (event.key === 'ArrowDown') {
         if (step > 0) {
-          throttleUpdate(step - 1)
+          setStep(step - 1)
         }
       }
     }
@@ -80,49 +82,40 @@ const useViewportByStep = (initialViewport: object, track: any) => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true)
     }
-  }, [coordinates.length, step])
-
-  useEffect(() => {
-    const stepCoordinates = coordinates[step]
-    const center = [stepCoordinates[1], stepCoordinates[0]]
-    const newViewport = { ...viewport, center }
-    setViewport(newViewport)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
-
-  const nextStepCoordinates =
-    step < coordinates.length - 1 ? coordinates[step + 1] : coordinates[step]
-  const nextStep = [nextStepCoordinates[1], nextStepCoordinates[0]]
-  const bearingAngle = bearingToAzimuth(bearing(viewport.center, nextStep))
-  return { viewport, bearing: bearingAngle }
+  }, [step, track.data.features])
+  return times[step]
 }
 
-const initialViewport = { zoom: 11, center: [1.6, 105] }
-
-const SearchPage: React.FC<RouteComponentProps> = (): JSX.Element => {
-  const { viewport, bearing } = useViewportByStep(initialViewport, track)
-
-  const marker = {
-    latitude: viewport.center[0],
-    longitude: viewport.center[1],
-    content: (
-      <span
-        className={styles.arrow}
-        style={{ transform: `translate(-50%, -50%)  rotate(${bearing + 60}deg)` }}
-      />
-    ),
-  }
+const MapNavigation: React.FC<RouteComponentProps> = (): JSX.Element => {
+  const timestamp = useTimestampEvent(track, 0)
+  const { center, bearingAngle } = useCenterByTimestamp(track, timestamp)
+  viewport.center = center
+  const markers = useMemo(
+    () => [
+      {
+        latitude: center[0],
+        longitude: center[1],
+        content: (
+          <span
+            className={styles.arrow}
+            style={{ transform: `translate(-50%, -50%) rotate(${bearingAngle + 60}deg)` }}
+          />
+        ),
+      },
+    ],
+    [bearingAngle, center]
+  )
   return (
     <div className={styles.mapContainer}>
       <MapModule
         viewport={viewport}
         transitionsEnabled
         tracks={tracks}
-        markers={[marker]}
+        markers={markers}
         // onViewportChange={onViewportChange}
       />
     </div>
   )
 }
 
-export default SearchPage
+export default MapNavigation

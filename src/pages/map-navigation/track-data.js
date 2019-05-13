@@ -29,3 +29,51 @@ export default {
   type: 'geojson',
   fitBoundsOnLoad: true,
 }
+
+// Style layer to render icon using mapbox
+// var origin = track.data.features[0].geometry.coordinates[0]
+// const iconLayer = {
+//   title: 'Navigation icon layer',
+//   type: 'mapboxgl',
+//   id: 'navigation_icon',
+//   visible: true,
+//   opacity: 1,
+//   gl: {
+//     source: {
+//       type: 'geojson',
+//       data: {
+//         type: 'FeatureCollection',
+//         features: [
+//           {
+//             type: 'Feature',
+//             properties: {
+//               bearing: 0,
+//             },
+//             geometry: {
+//               type: 'Point',
+//               coordinates: origin,
+//             },
+//           },
+//         ],
+//       },
+//     },
+//     layers: [
+//       {
+//         id: 'navigation-icon-layer',
+//         // source: 'navigation_icon',
+//         type: 'symbol',
+//         // paint: {
+//         //   'circle-radius': 10,
+//         //   'circle-color': '#007cbf',
+//         // },
+//         layout: {
+//           'icon-image': 'port',
+//           'icon-rotate': ['get', 'bearing'],
+//           'icon-rotation-alignment': 'map',
+//           'icon-allow-overlap': true,
+//           'icon-ignore-placement': true,
+//         },
+//       },
+//     ],
+//   },
+// }
