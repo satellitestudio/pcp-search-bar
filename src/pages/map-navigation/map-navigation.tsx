@@ -44,12 +44,21 @@ const getEventCoordinates = (track: any, timestamp: number, offset: number = 0):
   return eventCoordinates
 }
 
-const getNextDestinationDistance = (track: any, timestamp: number): number => {
+const getNextDestinationDistance = (track: any, timestamp: number, percentage: number): number => {
   const destinationCoordinateIndex = getCoordinatesIndexByTimestamp(track, timestamp)
   const { coordinates } = track.data.features[0].geometry
   const destinationCoordinates = coordinates[destinationCoordinateIndex]
+  // TODO calculate this with a real event, not with next track step
+  const followingDestinationCoordinates = coordinates[destinationCoordinateIndex + 1]
   const trackSliced = lineSlice(coordinates[0], destinationCoordinates, track.data.features[0])
-  return getGeometryLength(trackSliced)
+  const trackLength = getGeometryLength(trackSliced)
+  const followingTrackStep = lineSlice(
+    destinationCoordinates,
+    followingDestinationCoordinates,
+    track.data.features[0]
+  )
+  const followingTrackStepLengh = getGeometryLength(followingTrackStep)
+  return trackLength + (followingTrackStepLengh * percentage) / 100
 }
 
 const getNextPosition = (track: any, currentDistance: number, destinationDistance: number) => {
@@ -83,13 +92,13 @@ const getBearing = (start: Position, end: Position, rounded: boolean = false): n
   return rounded ? Math.round(bearing) : bearing
 }
 
-const useCenterByTimestamp = (track: any, timestamp: number) => {
+const useCenterByTimestamp = (track: any, timestamp: number, percentage: number) => {
   const center = useMemo(() => getEventCoordinates(track, timestamp), [timestamp, track])
   const nextEvent = useMemo(() => getEventCoordinates(track, timestamp, 1), [timestamp, track])
-  const destinationDistance = useMemo(() => getNextDestinationDistance(track, timestamp), [
-    timestamp,
-    track,
-  ])
+  const destinationDistance = useMemo(
+    () => getNextDestinationDistance(track, timestamp, percentage),
+    [track, percentage, timestamp]
+  )
   const bearing = getBearing(center, nextEvent)
   const [state, setState] = useState<{
     center: Position
@@ -128,20 +137,38 @@ const viewport = { zoom: 8, center: [2, 105.5] }
 
 const useTimestampEvent = (track: any) => {
   const { times } = track.data.features[0].properties.coordinateProperties
-  const [step, setStep] = useState<number>(0)
+  const [state, setState] = useState<{ step: number; percentage: number }>({
+    step: 33,
+    percentage: 0,
+  })
+  const { step, percentage } = state
   useEffect(() => {
     const { coordinates } = track.data.features[0].geometry
     const handleKeyDown = (event: KeyboardEvent) => {
       event.preventDefault()
       if (event.key === 'ArrowUp') {
         event.stopPropagation()
-        if (step < coordinates.length - 1) {
-          setStep(step + 4)
+        if (percentage < 90) {
+          setState({ step, percentage: percentage + 10 })
+        } else {
+          setState({ step: step + 1, percentage: 0 })
         }
       } else if (event.key === 'ArrowDown') {
         event.stopPropagation()
+        if (percentage > 0) {
+          setState({ step, percentage: percentage - 10 })
+        } else {
+          setState({ step: step - 1, percentage: 90 })
+        }
+      } else if (event.key === 'ArrowRight') {
+        event.stopPropagation()
+        if (step < coordinates.length - 1) {
+          setState({ step: step + 1, percentage: 0 })
+        }
+      } else if (event.key === 'ArrowLeft') {
+        event.stopPropagation()
         if (step > 0) {
-          setStep(step - 1)
+          setState({ step: step - 1, percentage: 0 })
         }
       }
     }
@@ -149,13 +176,13 @@ const useTimestampEvent = (track: any) => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true)
     }
-  }, [step, track.data.features])
-  return times[step]
+  }, [percentage, step, track.data.features])
+  return { timestamp: times[step], percentage }
 }
 
 const MapNavigation: React.FC<RouteComponentProps> = (): JSX.Element => {
-  const timestamp = useTimestampEvent(track)
-  const { center, bearing } = useCenterByTimestamp(track, timestamp)
+  const { timestamp, percentage } = useTimestampEvent(track)
+  const { center, bearing } = useCenterByTimestamp(track, timestamp, percentage)
   // const nextStep = useMemo(() => getEventCoordinates(track, timestamp), [timestamp])
   // viewport.center[0] = nextStep[1]
   // viewport.center[1] = nextStep[0]
