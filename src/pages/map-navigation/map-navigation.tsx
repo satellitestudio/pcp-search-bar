@@ -1,78 +1,145 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from '@reach/router'
 import MapModule from '@globalfishingwatch/map-components/components/map'
-import bearing from '@turf/bearing'
-import { point } from '@turf/helpers'
-import { bearingToAzimuth } from '@turf/helpers'
+import turfBearing from '@turf/bearing'
+import lineSlice from '@turf/line-slice'
+import getGeometryLength from '@turf/length'
+import along from '@turf/along'
+import { point, bearingToAzimuth, Geometry, Position, FeatureCollection } from '@turf/helpers'
 import styles from './map-navigation.module.css'
 import track from './track-data'
 
+interface CoordinateProperties {
+  id: string
+  type: string
+  coordinateProperties: {
+    times: number[]
+  }
+}
+
+interface Track {
+  id: string
+  data: FeatureCollection<Geometry, CoordinateProperties>
+  color: string
+  type: string
+  fitBoundsOnLoad: boolean
+}
+
+const MIN_STEP = 0.1 // distance in kilometers
 const tracks = [track]
 
-const getCoordinatesFromTimestamp = (track: any, timestamp: number) => {
-  const coordinates = track.data.features[0].geometry.coordinates[1]
-  return [coordinates[1], coordinates[0]]
+const getCoordinatesIndexByTimestamp = (track: any, timestamp: number): number => {
+  const { coordinateProperties } = track.data.features[0].properties
+  return coordinateProperties
+    ? coordinateProperties.times.findIndex((t: number) => t === timestamp)
+    : -1
 }
 
-const getNextEventsCoordinates = (track: any, timestamp: number) => {
+const getEventCoordinates = (track: any, timestamp: number, offset: number = 0): any => {
   const { coordinates } = track.data.features[0].geometry
-  // Calculate next event to get bearing
-  const nextStepCoordinates = 0 < coordinates.length - 1 ? coordinates[0 + 1] : coordinates[0]
-  return [nextStepCoordinates[1], nextStepCoordinates[0]]
+  const coordinateIndex = getCoordinatesIndexByTimestamp(track, timestamp)
+  const eventCoordinates = coordinates[coordinateIndex + offset]
+    ? coordinates[coordinateIndex + offset]
+    : coordinates[coordinateIndex]
+  return eventCoordinates
 }
 
-const getNextCenterPosition = (track: any, currentPosition: any, destination?: any) => {
-  const index = destination === undefined ? 0 : 1
-  const coordinates = track.data.features[0].geometry.coordinates[index]
-  const center = [coordinates[1], coordinates[0]]
-  return center
+const getNextDestinationDistance = (track: any, timestamp: number): number => {
+  const destinationCoordinateIndex = getCoordinatesIndexByTimestamp(track, timestamp)
+  const { coordinates } = track.data.features[0].geometry
+  const destinationCoordinates = coordinates[destinationCoordinateIndex]
+  const trackSliced = lineSlice(coordinates[0], destinationCoordinates, track.data.features[0])
+  return getGeometryLength(trackSliced)
+}
+
+const getNextPosition = (track: any, currentDistance: number, destinationDistance: number) => {
+  const stepDistance = destinationDistance - currentDistance
+  const stepDistanceInterpolated =
+    Math.abs(stepDistance) > MIN_STEP ? stepDistance / 2 : stepDistance
+  let nextStepDistance = 0
+  if (stepDistance < 0) {
+    nextStepDistance =
+      currentDistance + stepDistance >= destinationDistance
+        ? stepDistanceInterpolated
+        : destinationDistance - currentDistance
+  } else {
+    nextStepDistance =
+      currentDistance + stepDistance <= destinationDistance
+        ? stepDistanceInterpolated
+        : destinationDistance - currentDistance
+  }
+  let nextDistance = currentDistance + nextStepDistance
+  const nextCenter = along(track.data.features[0], nextDistance)
+  const coordinates: Position | null =
+    (nextCenter && nextCenter.geometry && nextCenter.geometry.coordinates) || null
+  return {
+    center: coordinates !== null ? coordinates : null,
+    nextDistance,
+  }
+}
+
+const getBearing = (start: Position, end: Position, rounded: boolean = false): number => {
+  const bearing = bearingToAzimuth(turfBearing(point(start), point(end)))
+  return rounded ? Math.round(bearing) : bearing
 }
 
 const useCenterByTimestamp = (track: any, timestamp: number) => {
-  const { coordinates } = track.data.features[0].geometry
-  const center = useMemo(() => getNextCenterPosition(track, coordinates[0]), [coordinates, track])
-  // Calculate next event to get bearing
-  const nextEvent = useMemo(() => getNextEventsCoordinates(track, timestamp), [timestamp, track])
-  const [state, setState] = useState<{ center: number[]; bearingAngle: number }>({
-    center,
-    bearingAngle: bearingToAzimuth(bearing(point(center), point(nextEvent))),
-  })
+  const center = useMemo(() => getEventCoordinates(track, timestamp), [timestamp, track])
+  const nextEvent = useMemo(() => getEventCoordinates(track, timestamp, 1), [timestamp, track])
+  const destinationDistance = useMemo(() => getNextDestinationDistance(track, timestamp), [
+    timestamp,
+    track,
+  ])
+  const bearing = getBearing(center, nextEvent)
+  const [state, setState] = useState<{
+    center: Position
+    bearing: number
+    currentDistance: number
+  }>({ center, bearing, currentDistance: destinationDistance })
 
   useEffect(() => {
     const updateViewport = () => {
-      const destination = getCoordinatesFromTimestamp(track, timestamp)
-      if (state.center[0] !== destination[0] && state.center[1] !== destination[1]) {
-        const center = getNextCenterPosition(track, state.center, destination)
-        console.log('TCL: updateViewport -> center', center)
-        const bearingAngle = bearingToAzimuth(bearing(point(center), point(nextEvent)))
-        setState({ center, bearingAngle })
+      const isGoingForward = state.currentDistance < destinationDistance
+      if (state.currentDistance !== destinationDistance) {
+        const { center, nextDistance } = getNextPosition(
+          track,
+          state.currentDistance,
+          destinationDistance
+        )
+        if (center !== null) {
+          const bearing = getBearing(state.center, center, true)
+          setState({
+            center,
+            bearing: isGoingForward ? bearing : bearing + 180,
+            currentDistance: nextDistance,
+          })
+        }
       } else {
-        console.log('FINISHED')
+        const bearing = getBearing(state.center, nextEvent)
+        setState({ center: state.center, currentDistance: state.currentDistance, bearing })
       }
     }
-    const requestAnimationFrame = window.requestAnimationFrame(updateViewport)
-    return () => {
-      window.cancelAnimationFrame(requestAnimationFrame)
-    }
-  }, [nextEvent, state.center, timestamp, track])
+    window.requestAnimationFrame(updateViewport)
+  }, [destinationDistance, nextEvent, state.center, state.currentDistance, timestamp, track])
   return { ...state }
 }
 
-const viewport = { zoom: 11, center: [1.6, 105] }
+const viewport = { zoom: 8, center: [2, 105.5] }
 
-const useTimestampEvent = (track: any, initialStep: number) => {
+const useTimestampEvent = (track: any) => {
   const { times } = track.data.features[0].properties.coordinateProperties
-  const [step, setStep] = useState<number>(initialStep)
+  const [step, setStep] = useState<number>(0)
   useEffect(() => {
     const { coordinates } = track.data.features[0].geometry
     const handleKeyDown = (event: KeyboardEvent) => {
       event.preventDefault()
-      event.stopPropagation()
       if (event.key === 'ArrowUp') {
+        event.stopPropagation()
         if (step < coordinates.length - 1) {
-          setStep(step + 1)
+          setStep(step + 4)
         }
       } else if (event.key === 'ArrowDown') {
+        event.stopPropagation()
         if (step > 0) {
           setStep(step - 1)
         }
@@ -87,31 +154,33 @@ const useTimestampEvent = (track: any, initialStep: number) => {
 }
 
 const MapNavigation: React.FC<RouteComponentProps> = (): JSX.Element => {
-  const timestamp = useTimestampEvent(track, 0)
-  const { center, bearingAngle } = useCenterByTimestamp(track, timestamp)
-  viewport.center = center
+  const timestamp = useTimestampEvent(track)
+  const { center, bearing } = useCenterByTimestamp(track, timestamp)
+  // const nextStep = useMemo(() => getEventCoordinates(track, timestamp), [timestamp])
+  // viewport.center[0] = nextStep[1]
+  // viewport.center[1] = nextStep[0]
   const markers = useMemo(
     () => [
       {
-        latitude: center[0],
-        longitude: center[1],
+        latitude: center[1],
+        longitude: center[0],
         content: (
           <span
             className={styles.arrow}
-            style={{ transform: `translate(-50%, -50%) rotate(${bearingAngle + 60}deg)` }}
+            style={{ transform: `translate(-50%, -50%) rotate(${bearing}deg)` }}
           />
         ),
       },
     ],
-    [bearingAngle, center]
+    [bearing, center]
   )
   return (
     <div className={styles.mapContainer}>
       <MapModule
         viewport={viewport}
-        transitionsEnabled
         tracks={tracks}
         markers={markers}
+        transitionsEnabled={false}
         // onViewportChange={onViewportChange}
       />
     </div>
