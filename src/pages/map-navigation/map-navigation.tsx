@@ -116,20 +116,28 @@ const useCenterByTimestamp = (track: any, timestamp: number, percentage: number)
           destinationDistance
         )
         if (center !== null) {
-          const bearing = getBearing(state.center, center, true)
-          setState({
-            center,
-            bearing: isGoingForward ? bearing : bearing + 180,
-            currentDistance: nextDistance,
+          setState((state) => {
+            const bearing = getBearing(state.center, center, true)
+            return {
+              center,
+              bearing: isGoingForward ? bearing : bearing + 180,
+              currentDistance: nextDistance,
+            }
           })
         }
       } else {
-        const bearing = getBearing(state.center, nextEvent)
-        setState({ center: state.center, currentDistance: state.currentDistance, bearing })
+        setState((state) => {
+          const bearing = getBearing(state.center, nextEvent)
+          return {
+            center: state.center,
+            bearing,
+            currentDistance: state.currentDistance,
+          }
+        })
       }
     }
     window.requestAnimationFrame(updateViewport)
-  }, [destinationDistance, nextEvent, state.center, state.currentDistance, timestamp, track])
+  }, [destinationDistance, nextEvent, state.currentDistance, timestamp, track])
   return { ...state }
 }
 
