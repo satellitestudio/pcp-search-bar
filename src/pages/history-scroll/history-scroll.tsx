@@ -1,12 +1,23 @@
-import React from 'react'
+import React, { Fragment, useState } from 'react'
 import { RouteComponentProps } from '@reach/router'
-import styles from './history-scroll.module.css'
+import Timeline from 'components/timeline/timeline'
+import data from './history-scroll.data'
+
+interface DataType {
+  event?: any
+  rfmo?: any
+}
+
+const dataTyped: DataType = data
 
 const HistoryScroll: React.FC<RouteComponentProps> = (): React.ReactElement => {
+  const [visible, setVisible] = useState(true)
   return (
-    <div className={styles.container}>
-      <h2>@erik, feel free to modify names, folder structure and... enjoy hacking!</h2>
-    </div>
+    <Fragment>
+      {/* <button className="button" onClick={() => setVisible(visible => !visible)}>Set visible</button> */}
+      {/* {visible && <Timeline />} */}
+      <Timeline events={dataTyped.event} rfmos={dataTyped.rfmo} visible={visible} />
+    </Fragment>
   )
 }
 

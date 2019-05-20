@@ -6,6 +6,8 @@
   "dependencies": {
     "@globalfishingwatch/map-components": "^1.7.1",
     "@reach/router": "^1.2.1",
+    "@types/classnames": "^2.2.7",
+    "@types/d3-scale": "^2.1.1",
     "@types/jest": "24.0.11",
     "@types/lodash": "^4.14.123",
     "@types/match-sorter": "^2.3.0",
@@ -16,6 +18,9 @@
     "@types/react": "^16.8.6",
     "@types/react-dom": "^16.8.4",
     "@types/react-window": "^1.8.0",
+    "classnames": "^2.2.6",
+    "d3-scale": "^3.0.0",
+    "dayjs": "^1.8.14",
     "downshift": "^3.2.7",
     "lodash": "^4.17.11",
     "match-sorter": "^3.0.0",
