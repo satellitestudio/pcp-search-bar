@@ -120,7 +120,7 @@ const useCenterByTimestamp = (track: any, timestamp: number, percentage: number)
             const bearing = getBearing(state.center, center, true)
             return {
               center,
-              bearing: isGoingForward ? bearing : bearing + 180,
+              bearing: isGoingForward ? bearing : bearing - 180,
               currentDistance: nextDistance,
             }
           })
