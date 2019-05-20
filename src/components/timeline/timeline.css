@@ -1,6 +1,6 @@
 body {
   --top-height: 60px;
-  --map-width: 300px;
+  --map-width: 50%;
   /* scroll-snap-type: y mandatory; */
   scroll-padding: var(--top-height);
 }
@@ -8,10 +8,6 @@ body {
 .button {
   position: absolute;
   z-index: 2;
-}
-
-div {
-  /* border: 1px solid #ddd; */
 }
 
 .top {
@@ -26,26 +22,26 @@ div {
   position: fixed;
   top: var(--top-height);
   right: 0;
-  width: var(--map-width);
+  left: var(--map-width);
   height: calc(100vh - var(--top-height));
   background-color: #ddd;
 }
 
 .page {
   position: absolute;
-  top: var(--top-height);
   width: calc(100vw - var(--map-width));
   display: grid;
   grid-template-rows: [profile] auto [events] auto;
   grid-template-columns: [timeline] 40px [detail] auto;
   grid-template-areas:
-    "profile profile"
+    "timeline profile"
     "timeline detail"
 }
 
 .profile {
   grid-area: profile;
   padding: 10px;
+  padding-top: var(--top-height);
   scroll-snap-align: start;
 }
 
@@ -113,16 +109,16 @@ div {
 }
 
 .event:first-child {
-  margin-top: 200px;
+  margin-top: 50vh;
 }
 
 .event:last-child {
-  margin-bottom: 100vh;
+  margin-bottom: 50vh;
 }
 
 .event.highlighted {
   font-weight: bold;
-  height: 160px;
+  /* height: 160px; */
   background-color: aquamarine;
 }
 

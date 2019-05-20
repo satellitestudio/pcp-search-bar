@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 export const START = dayjs(new Date(2017, 0, 1))
 export const END = dayjs(new Date(2017, 11, 31))
 
+// TODO generates from geojson
 const generateMock = () => {
   const CONFIG = {
     rfmo: {

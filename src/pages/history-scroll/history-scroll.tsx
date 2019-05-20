@@ -1,7 +1,7 @@
-import React, { Fragment, useState } from 'react'
+import React from 'react'
 import { RouteComponentProps } from '@reach/router'
 import Timeline from 'components/timeline/timeline'
-import data from './history-scroll.data'
+import data from 'data/events-history'
 
 interface DataType {
   event?: any
@@ -11,14 +11,7 @@ interface DataType {
 const dataTyped: DataType = data
 
 const HistoryScroll: React.FC<RouteComponentProps> = (): React.ReactElement => {
-  const [visible, setVisible] = useState(true)
-  return (
-    <Fragment>
-      {/* <button className="button" onClick={() => setVisible(visible => !visible)}>Set visible</button> */}
-      {/* {visible && <Timeline />} */}
-      <Timeline events={dataTyped.event} rfmos={dataTyped.rfmo} visible={visible} />
-    </Fragment>
-  )
+  return <Timeline events={dataTyped.event} rfmos={dataTyped.rfmo} />
 }
 
 export default HistoryScroll
