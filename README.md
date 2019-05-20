@@ -1,4 +1,4 @@
-## Prototyping the carrier portal search bar
+## Prototyping the carrier portal
 
 ```
 yarn install && yarn start
