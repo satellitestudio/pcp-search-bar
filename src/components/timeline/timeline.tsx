@@ -15,7 +15,11 @@ interface TimelineProps {
   onChange?: (timestamp: number | null) => void
 }
 
-const Timeline: React.FC<TimelineProps> = ({ events, rfmos, onChange }) => {
+const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
+  events,
+  rfmos,
+  onChange,
+}) {
   // prepare coordinates (only be events prop changes, so that should mean only at mount)
   const computeCoordinates = (events: any, rfmos: any) => {
     const scale = scaleTime()
@@ -216,6 +220,6 @@ const Timeline: React.FC<TimelineProps> = ({ events, rfmos, onChange }) => {
       </div>
     </Fragment>
   )
-}
+})
 
 export default Timeline
