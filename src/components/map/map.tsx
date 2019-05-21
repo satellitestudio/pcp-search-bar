@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import MapModule from '@globalfishingwatch/map-components/components/map'
 import turfBearing from '@turf/bearing'
 import lineSlice from '@turf/line-slice'
@@ -9,9 +9,11 @@ import { point, bearingToAzimuth, Position } from '@turf/helpers'
 import styles from './map.module.css'
 
 const MIN_STEP = 0.1 // distance in kilometers
+const TRANSITION_FRAMES = 16 // should be 60 fps
 const tracks = [track]
 
 const getCoordinatesIndexByTimestamp = (track: any, timestamp: number): number => {
+  // TODO find track features
   const { coordinateProperties } = track.data.features[0].properties
   return coordinateProperties
     ? coordinateProperties.times.findIndex((t: number) => t === timestamp)
@@ -44,19 +46,28 @@ const getNextDestinationDistance = (track: any, timestamp: number, percentage: n
   return trackLength + (followingTrackStepLengh * percentage) / 100
 }
 
-const getNextPosition = (track: any, currentDistance: number, destinationDistance: number) => {
-  const stepDistance = destinationDistance - currentDistance
+const getNextPosition = (
+  track: any,
+  currentDistance: number,
+  destinationDistance: number,
+  originalDistance: number // used when we want to use frames per second
+) => {
+  // Using original when want to set the same step distance on each frame
+  // Using currentDistance when we want to interpolate between current and destination
+  const stepDistance = destinationDistance - originalDistance
   const stepDistanceInterpolated =
-    Math.abs(stepDistance) > MIN_STEP ? stepDistance * 0.2 : stepDistance
+    Math.abs(stepDistance / TRANSITION_FRAMES) > MIN_STEP
+      ? stepDistance / TRANSITION_FRAMES // stepDistance * 0.2
+      : stepDistance
   let nextStepDistance = 0
   if (stepDistance < 0) {
     nextStepDistance =
-      currentDistance + stepDistance >= destinationDistance
+      currentDistance + stepDistanceInterpolated >= destinationDistance
         ? stepDistanceInterpolated
         : destinationDistance - currentDistance
   } else {
     nextStepDistance =
-      currentDistance + stepDistance <= destinationDistance
+      currentDistance + stepDistanceInterpolated <= destinationDistance
         ? stepDistanceInterpolated
         : destinationDistance - currentDistance
   }
@@ -82,6 +93,7 @@ const useCenterByTimestamp = (track: any, timestamp: number, percentage: number)
     () => getNextDestinationDistance(track, timestamp, percentage),
     [track, percentage, timestamp]
   )
+  const originalDistance = useRef<number>(destinationDistance)
   const bearing = getBearing(center, nextEvent)
   const [state, setState] = useState<{
     center: Position
@@ -90,13 +102,20 @@ const useCenterByTimestamp = (track: any, timestamp: number, percentage: number)
   }>({ center, bearing, currentDistance: destinationDistance })
 
   useEffect(() => {
+    originalDistance.current = state.currentDistance
+    // We want to update the original distance only when the destination timestamp changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timestamp])
+
+  useEffect(() => {
     const updateViewport = () => {
       const isGoingForward = state.currentDistance < destinationDistance
       if (state.currentDistance !== destinationDistance) {
         const { center, nextDistance } = getNextPosition(
           track,
           state.currentDistance,
-          destinationDistance
+          destinationDistance,
+          originalDistance.current
         )
         if (center !== null) {
           setState((state) => {
@@ -124,7 +143,7 @@ const useCenterByTimestamp = (track: any, timestamp: number, percentage: number)
   return { ...state }
 }
 
-const viewport = { zoom: 8, center: [2, 105.5] }
+const viewport = { zoom: 8, center: [-3, 109] }
 
 interface MapNavigationProps {
   timestamp: number
@@ -136,6 +155,8 @@ const MapNavigation: React.FC<MapNavigationProps> = ({ timestamp, percentage }):
   // const nextStep = useMemo(() => getEventCoordinates(track, timestamp), [timestamp])
   // viewport.center[0] = nextStep[1]
   // viewport.center[1] = nextStep[0]
+  viewport.center[0] = center[1]
+  viewport.center[1] = center[0]
 
   const markers = useMemo(
     () => [

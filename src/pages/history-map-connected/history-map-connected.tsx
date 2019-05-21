@@ -1,10 +1,11 @@
-import React, { useCallback, useState, useMemo } from 'react'
+import React, { useCallback, useState } from 'react'
 import { RouteComponentProps } from '@reach/router'
 import Timeline from 'components/timeline/timeline'
 import data from 'data/events-history'
 import MapNavigation from 'components/map/map'
 import track from 'data/track'
 
+console.log('TCL: data', data)
 interface DataType {
   event?: any
   rfmo?: any
@@ -18,13 +19,13 @@ const getTimestampByStep = (track: any, step: number) => {
 }
 
 const HistoryScroll: React.FC<RouteComponentProps> = (): React.ReactElement => {
-  const [step, setStep] = useState<number>(0)
-  const handleTimelineChange = useCallback((step) => {
-    if (step) {
-      setStep(step)
+  const [timestamp, setTimestamp] = useState<number>(getTimestampByStep(track, 0))
+  const handleTimelineChange = useCallback((timestamp) => {
+    if (timestamp) {
+      setTimestamp(timestamp)
     }
   }, [])
-  const timestamp = useMemo(() => getTimestampByStep(track, step), [step])
+
   return (
     <div className="page">
       <div className="top">top</div>

@@ -15,5 +15,5 @@
   transform-origin: center;
   border-width: 0 7px 25px 7px;
   /* transition: transform 0.3s; */
-  border-color: transparent transparent #FE81EB transparent;
+  border-color: transparent transparent rgb(207, 58, 58) transparent;
 }
