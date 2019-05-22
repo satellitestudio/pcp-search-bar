@@ -42,7 +42,12 @@ const HistoryScroll: React.FC<RouteComponentProps> = (): React.ReactElement => {
         />
         vessel profile
       </div>
-      <Timeline events={dataTyped.event} rfmos={dataTyped.rfmo} onChange={handleTimelineChange} />
+      <Timeline
+        events={dataTyped.event}
+        rfmos={dataTyped.rfmo}
+        onEventClick={handleTimelineChange}
+        onChange={handleTimelineChange}
+      />
     </div>
   )
 }

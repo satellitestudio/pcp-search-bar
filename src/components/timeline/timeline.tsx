@@ -13,12 +13,14 @@ interface TimelineProps {
   events: object
   rfmos: object
   onChange?: (timestamp: number | null) => void
+  onEventClick?: (timestamp: number | null) => void
 }
 
 const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
   events,
   rfmos,
   onChange,
+  onEventClick,
 }) {
   // prepare coordinates (only be events prop changes, so that should mean only at mount)
   const computeCoordinates = (events: any, rfmos: any) => {
@@ -89,7 +91,7 @@ const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
     isRAFTicking = false
     const cH = document.documentElement.clientHeight
     const wH = window.innerHeight || 0
-    const middle = 60 + Math.max(cH, wH) / 2
+    const middle = Math.max(cH, wH) / 2
     let minDelta = Number.POSITIVE_INFINITY
     let selectedEvent = null
     eventRefs.forEach((el, key) => {
@@ -112,6 +114,22 @@ const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
       window.requestAnimationFrame(checkScroll)
     }
   }, [checkScroll])
+
+  const handleEventClick = useCallback(
+    (event) => {
+      const ref = eventRefs.get(event.id)
+      if (ref) {
+        ref.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+        if (onEventClick !== undefined) {
+          onEventClick(event.id)
+        }
+      }
+    },
+    [eventRefs, onEventClick]
+  )
 
   useEffect(() => {
     window.addEventListener('scroll', onScroll, true)
@@ -145,7 +163,7 @@ const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
   }, [selected, scrollCoords])
   const cH = document.documentElement.clientHeight
   const wH = window.innerHeight || 0
-  const middle = 60 + Math.max(cH, wH) / 2
+  const middle = Math.max(cH, wH) / 2
 
   return (
     <Fragment>
@@ -169,6 +187,7 @@ const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
                 width={COLUMN_WIDTH}
                 height={event.height}
                 className={cx({ highlighted: event.id === selected })}
+                onClick={() => handleEventClick(event)}
               />
             ))}
           </g>
@@ -193,11 +212,10 @@ const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
           />
         </svg>
       </div>
-      <div className="detail" /* ref={(ref) => { detailsRef = ref }} */>
+      <div className="detail">
         {timelineCoords.events.map((event: any) => {
           return (
             <div
-              // ref={someRef}
               ref={(inst) =>
                 inst === null ? eventRefs.delete(event.id) : eventRefs.set(event.id, inst)
               }
