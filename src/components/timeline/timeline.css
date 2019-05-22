@@ -1,8 +1,6 @@
 body {
   --top-height: 60px;
-  --map-width: 50%;
-  /* scroll-snap-type: y mandatory; */
-  scroll-padding: var(--top-height);
+  --map-width: 30%;
 }
 
 .button {
@@ -15,19 +13,20 @@ body {
   width: 100%;
   height: var(--top-height);
   background-color: #aaa;
-  z-index: 1;
+  z-index: 11;
 }
 
 .map {
   position: fixed;
   top: var(--top-height);
   right: 0;
-  left: var(--map-width);
+  left: calc(100% - var(--map-width));
   height: calc(100vh - var(--top-height));
   background-color: #ddd;
 }
 
 .page {
+  padding-top: var(--top-height);
   position: absolute;
   width: calc(100vw - var(--map-width));
   display: grid;
@@ -41,12 +40,38 @@ body {
 .profile {
   grid-area: profile;
   padding: 10px;
-  padding-top: var(--top-height);
-  scroll-snap-align: start;
+  min-height: 50vh;
 }
 
-.profile img {
-  height: 400px;
+.profile button {
+  opacity: 0;
+}
+
+.profileHeader {
+  display: flex;
+  justify-content: space-between;
+}
+
+.profile h2 {
+  margin: 0;
+  padding: 1rem;
+  font-size: 20px;
+  min-height: 55px;
+  display: flex;
+  align-items: center;
+}
+
+.profileSticky .profileHeader {
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+}
+
+.profileSticky h2 {
+  font-size: 15px;
+}
+
+.profileSticky button {
+  opacity: 1;
 }
 
 .timeline {
@@ -105,11 +130,6 @@ body {
   margin-left: 100px;
   height: 90px;
   border: 1px solid #ddd;
-  scroll-snap-align: center;
-}
-
-.event:first-child {
-  margin-top: 50vh;
 }
 
 .event:last-child {
