@@ -178,6 +178,18 @@ const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
       />
       <div className="timeline">
         <svg>
+          <g className="rfmosColumn">
+            {timelineCoords.rfmos.map((rfmo: any) => (
+              <rect
+                x={0}
+                y={rfmo.startCoord}
+                key={rfmo.id}
+                width="100%"
+                height={rfmo.height}
+                className={cx({ highlighted: rfmo.id === scrollCoords.currentRfmoId })}
+              />
+            ))}
+          </g>
           <g className="eventsColumn">
             {timelineCoords.events.map((event: any) => (
               <rect
@@ -191,25 +203,15 @@ const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
               />
             ))}
           </g>
-          <g className="rfmosColumn">
-            {timelineCoords.rfmos.map((rfmo: any) => (
-              <rect
-                x={0}
-                y={rfmo.startCoord}
-                key={rfmo.id}
-                width={COLUMN_WIDTH}
-                height={rfmo.height}
-                className={cx({ highlighted: rfmo.id === scrollCoords.currentRfmoId })}
-              />
-            ))}
-          </g>
-          <line
-            x1="0%"
-            x2="100%"
+          <g
             style={{
               transform: `translateY(${scrollCoords.y})`,
             }}
-          />
+          >
+            <line x1="0%" x2="100%" />
+            <text x="100%">Jan 12 2017</text>
+            <text x="100%">RFMO</text>
+          </g>
         </svg>
       </div>
       <div className="detail">

@@ -79,7 +79,7 @@ body {
   position: sticky;
   height: calc(100vh - var(--top-height));
   top: var(--top-height);
-  background-color: #ccc;
+  /* background-color: #ccc; */
 }
 
 .timeline svg {
@@ -93,11 +93,11 @@ body {
 }
 
 .timeline .rfmosColumn {
-  transform: translateX(5px);
+  /* transform: translateX(5px); */
 }
 
 .timeline .eventsColumn {
-  transform: translateX(20px);
+  transform: translateX(15px);
 }
 
 .timeline rect {
@@ -107,14 +107,16 @@ body {
 }
 
 .timeline .rfmosColumn rect {
-  fill: gray
+  fill: gray;
+  stroke-width: 3px;
+  stroke: white;
 }
 
 .timeline .eventsColumn rect {
-  fill: red
+  fill: red;
 }
 
-.timeline rect.highlighted {
+.timeline .eventsColumn rect.highlighted {
   stroke: black;
   fill: white;
   fill-opacity: 1;

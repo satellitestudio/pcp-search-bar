@@ -46,7 +46,7 @@ const generateMock = () => {
         break
       }
       data.push(event)
-      i = i + (Math.floor(Math.random() * 20) + 1)
+      i = i + (Math.floor(Math.random() * 40) + 10)
     }
     allData[key] = data
   })
