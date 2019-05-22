@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import Ola from 'ola'
 import MapModule from '@globalfishingwatch/map-components/components/map'
 import turfBearing from '@turf/bearing'
 import lineSlice from '@turf/line-slice'
@@ -8,9 +9,9 @@ import track from 'data/track'
 import { point, bearingToAzimuth, Position } from '@turf/helpers'
 import styles from './map.module.css'
 
-const MIN_STEP = 0.1 // distance in kilometers
-const TRANSITION_FRAMES = 16 // should be 60 fps
 const tracks = [track]
+// Ola magic https://github.com/franciscop/ola
+const positionInterpolator = Ola({ distance: 0 }, 1000)
 
 const getCoordinatesIndexByTimestamp = (track: any, timestamp: number): number => {
   // TODO find track features
@@ -46,32 +47,8 @@ const getNextDestinationDistance = (track: any, timestamp: number, percentage: n
   return trackLength + (followingTrackStepLengh * percentage) / 100
 }
 
-const getNextPosition = (
-  track: any,
-  currentDistance: number,
-  destinationDistance: number,
-  originalDistance: number // used when we want to use frames per second
-) => {
-  // Using original when want to set the same step distance on each frame
-  // Using currentDistance when we want to interpolate between current and destination
-  const stepDistance = destinationDistance - originalDistance
-  const stepDistanceInterpolated =
-    Math.abs(stepDistance / TRANSITION_FRAMES) > MIN_STEP
-      ? stepDistance / TRANSITION_FRAMES // stepDistance * 0.2
-      : stepDistance
-  let nextStepDistance = 0
-  if (stepDistance < 0) {
-    nextStepDistance =
-      currentDistance + stepDistanceInterpolated >= destinationDistance
-        ? stepDistanceInterpolated
-        : destinationDistance - currentDistance
-  } else {
-    nextStepDistance =
-      currentDistance + stepDistanceInterpolated <= destinationDistance
-        ? stepDistanceInterpolated
-        : destinationDistance - currentDistance
-  }
-  let nextDistance = currentDistance + nextStepDistance
+const getNextPosition = (track: any) => {
+  const nextDistance = positionInterpolator.distance
   const nextCenter = along(track.data.features[0], nextDistance)
   const coordinates: Position | null =
     (nextCenter && nextCenter.geometry && nextCenter.geometry.coordinates) || null
@@ -103,6 +80,7 @@ const useCenterByTimestamp = (track: any, timestamp: number, percentage: number)
 
   useEffect(() => {
     originalDistance.current = state.currentDistance
+    positionInterpolator.set({ distance: destinationDistance })
     // We want to update the original distance only when the destination timestamp changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timestamp])
