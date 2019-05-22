@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import Ola from 'ola'
+import cx from 'classnames'
 import MapModule from '@globalfishingwatch/map-components/components/map'
 import turfBearing from '@turf/bearing'
 import lineSlice from '@turf/line-slice'
@@ -8,6 +9,7 @@ import along from '@turf/along'
 import track from 'data/track'
 import { point, bearingToAzimuth, Position } from '@turf/helpers'
 import styles from './map.module.css'
+import historyData from 'data/events-history'
 
 const tracks = [track]
 // Ola magic https://github.com/franciscop/ola
@@ -58,8 +60,14 @@ const getNextPosition = (track: any) => {
   }
 }
 
-const getBearing = (start: Position, end: Position, rounded: boolean = false): number => {
-  const bearing = bearingToAzimuth(turfBearing(point(start), point(end)))
+interface BearingOptions {
+  rounded?: boolean
+  final?: boolean
+}
+
+const getBearing = (start: Position, end: Position, options: BearingOptions = {}): number => {
+  const { rounded = false, final = false } = options
+  const bearing = bearingToAzimuth(turfBearing(point(start), point(end), { final }))
   return rounded ? Math.round(bearing) : bearing
 }
 
@@ -71,7 +79,10 @@ const useCenterByTimestamp = (track: any, timestamp: number, percentage: number)
     [track, percentage, timestamp]
   )
   const originalDistance = useRef<number>(destinationDistance)
-  const bearing = getBearing(center, nextEvent)
+  const bearing = useMemo(() => getBearing(center, nextEvent, { rounded: true }), [
+    center,
+    nextEvent,
+  ])
   const [state, setState] = useState<{
     center: Position
     bearing: number
@@ -89,15 +100,10 @@ const useCenterByTimestamp = (track: any, timestamp: number, percentage: number)
     const updateViewport = () => {
       const isGoingForward = state.currentDistance < destinationDistance
       if (state.currentDistance !== destinationDistance) {
-        const { center, nextDistance } = getNextPosition(
-          track,
-          state.currentDistance,
-          destinationDistance,
-          originalDistance.current
-        )
+        const { center, nextDistance } = getNextPosition(track)
         if (center !== null) {
           setState((state) => {
-            const bearing = getBearing(state.center, center, true)
+            const bearing = getBearing(state.center, center, { rounded: true })
             return {
               center,
               bearing: isGoingForward ? bearing : bearing - 180,
@@ -106,14 +112,14 @@ const useCenterByTimestamp = (track: any, timestamp: number, percentage: number)
           })
         }
       } else {
-        setState((state) => {
-          const bearing = getBearing(state.center, nextEvent)
-          return {
-            center: state.center,
-            bearing,
-            currentDistance: state.currentDistance,
-          }
-        })
+        // setState((state) => {
+        //   const bearing = getBearing(state.center, nextEvent, { final: true })
+        //   return {
+        //     center: state.center,
+        //     bearing,
+        //     currentDistance: state.currentDistance,
+        //   }
+        // })
       }
     }
     window.requestAnimationFrame(updateViewport)
@@ -136,21 +142,36 @@ const MapNavigation: React.FC<MapNavigationProps> = ({ timestamp, percentage }):
   viewport.center[0] = center[1]
   viewport.center[1] = center[0]
 
-  const markers = useMemo(
-    () => [
-      {
-        latitude: center[1],
-        longitude: center[0],
-        content: (
-          <span
-            className={styles.arrow}
-            style={{ transform: `translate(-50%, -50%) rotate(${bearing}deg)` }}
-          />
-        ),
-      },
-    ],
+  const vesselMarker = useMemo(
+    () => ({
+      latitude: center[1],
+      longitude: center[0],
+      content: (
+        <span
+          className={styles.arrow}
+          style={{ transform: `translate(-50%, -50%) rotate(${bearing}deg)` }}
+        />
+      ),
+    }),
     [bearing, center]
   )
+
+  const eventMarkers = useMemo(
+    () =>
+      historyData.event.map((event: any) => {
+        const { id } = event
+        const eventCoordinates = getEventCoordinates(track, id)
+        const eventActive = eventCoordinates[0] === center[0] && eventCoordinates[1] === center[1]
+        return {
+          latitude: eventCoordinates[1],
+          longitude: eventCoordinates[0],
+          content: <span className={cx(styles.event, { [styles.eventActive]: eventActive })} />,
+        }
+      }),
+    [center]
+  )
+
+  const markers = useMemo(() => eventMarkers.concat(vesselMarker), [eventMarkers, vesselMarker])
   return (
     <div className={styles.mapContainer}>
       <MapModule
