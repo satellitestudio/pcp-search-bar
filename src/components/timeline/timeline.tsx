@@ -214,12 +214,13 @@ const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
       </div>
       <div className="detail">
         {timelineCoords.events.map((event: any) => {
+          const highlighted = event.id === selected
           return (
             <div
               ref={(inst) =>
                 inst === null ? eventRefs.delete(event.id) : eventRefs.set(event.id, inst)
               }
-              className={cx('event', { highlighted: event.id === selected })}
+              className={cx('event', { highlighted })}
               key={event.id}
             >
               Event {event.id}
@@ -231,6 +232,14 @@ const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
               <br />
               {event.id === selected && encounteredVessel !== null && (
                 <div className="encounteredVessel">{encounteredVessel}</div>
+              )}
+              {highlighted === true && (
+                <ul>
+                  <li>data 1</li>
+                  <li>data 2</li>
+                  <li>data 3</li>
+                  <li>data 4</li>
+                </ul>
               )}
             </div>
           )

@@ -127,8 +127,7 @@ body {
 
 .event {
   position: relative;
-  margin-left: 100px;
-  height: 90px;
+  margin: 20px 0 20px 100px;
   border: 1px solid #ddd;
 }
 
@@ -138,7 +137,7 @@ body {
 
 .event.highlighted {
   font-weight: bold;
-  /* height: 160px; */
+  height: auto;
   background-color: aquamarine;
 }
 
