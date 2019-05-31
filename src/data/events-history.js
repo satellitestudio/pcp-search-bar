@@ -1,8 +1,13 @@
 import dayjs from 'dayjs'
+import track from './track'
+
+const trackFeature = track.data.features.find((f) => f.properties.type === 'track')
+const { times } = trackFeature.properties.coordinateProperties
 
 export const START = dayjs(new Date(2017, 0, 1))
 export const END = dayjs(new Date(2017, 11, 31))
 
+// TODO generates from geojson
 const generateMock = () => {
   const CONFIG = {
     rfmo: {
@@ -19,7 +24,7 @@ const generateMock = () => {
     const durationRange = conf.duration[1] - conf.duration[0]
     const intervalRange = conf.interval ? conf.interval[1] - conf.interval[0] : null
     const data = []
-    let id = 0
+    let i = 0
     while (true) {
       const last = data.length ? data[data.length - 1] : null
       const duration = conf.duration[0] + Math.random() * durationRange
@@ -31,7 +36,7 @@ const generateMock = () => {
       }
       let end = start.add(duration, conf.duration[2])
       const event = {
-        id,
+        id: times[i],
         start,
         end,
       }
@@ -41,7 +46,7 @@ const generateMock = () => {
         break
       }
       data.push(event)
-      id++
+      i = i + (Math.floor(Math.random() * 40) + 10)
     }
     allData[key] = data
   })

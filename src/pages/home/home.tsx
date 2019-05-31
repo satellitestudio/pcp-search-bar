@@ -10,6 +10,7 @@ const Home: React.FC<RouteComponentProps> = (): React.ReactElement => {
         <Link to={`${process.env.PUBLIC_URL}/search`}>Search</Link>
         <Link to={`${process.env.PUBLIC_URL}/scrolling`}>History scroll</Link>
         <Link to={`${process.env.PUBLIC_URL}/map-navigation`}>Map navigation</Link>
+        <Link to={`${process.env.PUBLIC_URL}/map-scrolling`}>Map and events scroll navigation</Link>
       </nav>
     </Fragment>
   )

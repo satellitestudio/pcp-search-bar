@@ -3,7 +3,7 @@ import { scaleTime } from 'd3-scale'
 import { debounce } from 'lodash'
 import cx from 'classnames'
 import './timeline.css'
-import { START, END } from 'pages/history-scroll/history-scroll.data'
+import { START, END } from 'data/events-history'
 
 const COLUMN_WIDTH = 10
 
@@ -12,10 +12,16 @@ let isRAFTicking = false
 interface TimelineProps {
   events: object
   rfmos: object
-  visible: boolean
+  onChange?: (timestamp: number | null) => void
+  onEventClick?: (timestamp: number | null) => void
 }
 
-const Timeline: React.FC<TimelineProps> = ({ events, rfmos }) => {
+const Timeline: React.FC<TimelineProps> = React.memo(function Timeline({
+  events,
+  rfmos,
+  onChange,
+  onEventClick,
+}) {
   // prepare coordinates (only be events prop changes, so that should mean only at mount)
   const computeCoordinates = (events: any, rfmos: any) => {
     const scale = scaleTime()
@@ -78,14 +84,14 @@ const Timeline: React.FC<TimelineProps> = ({ events, rfmos }) => {
   let eventRefs = useRef(new Map()).current
 
   // store currently highlighted/selected event in state
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelected] = useState<number | null>(null)
 
   // selects an event depending on scroll position
   const checkScroll = useCallback(() => {
     isRAFTicking = false
     const cH = document.documentElement.clientHeight
     const wH = window.innerHeight || 0
-    const middle = 60 + Math.max(cH, wH) / 2
+    const middle = Math.max(cH, wH) / 2
     let minDelta = Number.POSITIVE_INFINITY
     let selectedEvent = null
     eventRefs.forEach((el, key) => {
@@ -109,13 +115,32 @@ const Timeline: React.FC<TimelineProps> = ({ events, rfmos }) => {
     }
   }, [checkScroll])
 
+  const handleEventClick = useCallback(
+    (event) => {
+      const ref = eventRefs.get(event.id)
+      if (ref) {
+        ref.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+        if (onEventClick !== undefined) {
+          onEventClick(event.id)
+        }
+      }
+    },
+    [eventRefs, onEventClick]
+  )
+
   useEffect(() => {
-    console.log('useEffect:adding scroll listener on mount')
     window.addEventListener('scroll', onScroll, true)
     return () => {
       window.removeEventListener('scroll', onScroll, true)
     }
   }, [onScroll])
+
+  useEffect(() => {
+    onChange !== undefined && onChange(selected)
+  }, [onChange, selected])
 
   const timelineCoords = useMemo(() => computeCoordinates(events, rfmos), [events, rfmos])
   const scrollCoords = useMemo(() => computeScrollCoords(timelineCoords, selected), [
@@ -125,120 +150,105 @@ const Timeline: React.FC<TimelineProps> = ({ events, rfmos }) => {
 
   const [encounteredVessel, setEncounteredVessel] = useState(null)
   const loadEncounteredVessel = (currentEvent: any) => {
-    console.log(currentEvent.encounteredVessel)
     // simulate fetch - should also cancel pending, if it exists
     setTimeout(() => setEncounteredVessel(currentEvent.encounteredVessel), 200)
   }
   const debouncedLoadEncounteredVessel = useRef(debounce(loadEncounteredVessel, 1000))
   useEffect(() => {
-    console.log('useEffect:selected event changed - load encountered vessel on debounce')
     setEncounteredVessel(null)
     debouncedLoadEncounteredVessel.current.cancel()
-    console.log(scrollCoords.currentEvent)
     if (selected !== null && scrollCoords.currentEvent.encounteredVessel !== null) {
       debouncedLoadEncounteredVessel.current(scrollCoords.currentEvent)
     }
   }, [selected, scrollCoords])
-
-  console.log(encounteredVessel)
+  const cH = document.documentElement.clientHeight
+  const wH = window.innerHeight || 0
+  const middle = Math.max(cH, wH) / 2
 
   return (
     <Fragment>
-      <div className="top">top</div>
-      <div className="map">map</div>
-      <div className="page">
-        <div className="profile">
-          <img
-            alt="dummy"
-            src={`http://placekitten.com/${Math.floor(100 + Math.random() * 200)}/${Math.floor(
-              100 + Math.random() * 200
-            )}`}
-          />
-          vessel profile
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-          <br />
-        </div>
-        <div className="timeline">
-          <svg>
-            <g className="eventsColumn">
-              {timelineCoords.events.map((event: any) => (
-                <rect
-                  x={0}
-                  y={event.startCoord}
-                  key={event.id}
-                  width={COLUMN_WIDTH}
-                  height={event.height}
-                  className={cx({ highlighted: event.id === selected })}
-                />
-              ))}
-            </g>
-            <g className="rfmosColumn">
-              {timelineCoords.rfmos.map((rfmo: any) => (
-                <rect
-                  x={0}
-                  y={rfmo.startCoord}
-                  key={rfmo.id}
-                  width={COLUMN_WIDTH}
-                  height={rfmo.height}
-                  className={cx({ highlighted: rfmo.id === scrollCoords.currentRfmoId })}
-                />
-              ))}
-            </g>
-            <line
-              x1="0%"
-              x2="100%"
-              style={{
-                transform: `translateY(${scrollCoords.y})`,
-              }}
-            />
-          </svg>
-        </div>
-        <div className="detail" /* ref={(ref) => { detailsRef = ref }} */>
-          {timelineCoords.events.map((event: any) => {
-            return (
-              <div
-                // ref={someRef}
-                ref={(inst) =>
-                  inst === null ? eventRefs.delete(event.id) : eventRefs.set(event.id, inst)
-                }
-                className={cx('event', { highlighted: event.id === selected })}
+      <div
+        style={{
+          top: middle,
+          position: 'fixed',
+          zIndex: 10,
+          width: 100,
+          borderBottom: '1px solid red',
+        }}
+      />
+      <div className="timeline">
+        <svg>
+          <g className="rfmosColumn">
+            {timelineCoords.rfmos.map((rfmo: any) => (
+              <rect
+                x={0}
+                y={rfmo.startCoord}
+                key={rfmo.id}
+                width="100%"
+                height={rfmo.height}
+                className={cx({ highlighted: rfmo.id === scrollCoords.currentRfmoId })}
+              />
+            ))}
+          </g>
+          <g className="eventsColumn">
+            {timelineCoords.events.map((event: any) => (
+              <rect
+                x={0}
+                y={event.startCoord}
                 key={event.id}
-              >
-                Event {event.id}
-                <br />
-                {event.encounteredVessel !== null && <div>I'm an encounter!</div>}
-                {event.start.format('DD/MM/YYYY HH:mm')}
-                <br />
-                {event.end.format('DD/MM/YYYY HH:mm')}
-                <br />
-                {event.id === selected && encounteredVessel !== null && (
-                  <div className="encounteredVessel">{encounteredVessel}</div>
-                )}
-              </div>
-            )
-          })}
-        </div>
+                width={COLUMN_WIDTH}
+                height={event.height}
+                className={cx({ highlighted: event.id === selected })}
+                onClick={() => handleEventClick(event)}
+              />
+            ))}
+          </g>
+          <g
+            style={{
+              transform: `translateY(${scrollCoords.y})`,
+            }}
+          >
+            <line x1="0%" x2="100%" />
+            <text x="100%">Jan 12 2017</text>
+            <text x="100%">RFMO</text>
+          </g>
+        </svg>
+      </div>
+      <div className="detail">
+        {timelineCoords.events.map((event: any) => {
+          const highlighted = event.id === selected
+          return (
+            <div
+              ref={(inst) =>
+                inst === null ? eventRefs.delete(event.id) : eventRefs.set(event.id, inst)
+              }
+              className={cx('event', { highlighted })}
+              key={event.id}
+            >
+              Event {event.id}
+              <br />
+              {event.encounteredVessel !== null && <div>I'm an encounter!</div>}
+              {event.start.format('DD/MM/YYYY HH:mm')}
+              <br />
+              {event.end.format('DD/MM/YYYY HH:mm')}
+              <br />
+              {event.id === selected && encounteredVessel !== null && (
+                <div className="encounteredVessel">{encounteredVessel}</div>
+              )}
+              {highlighted === true && (
+                <ul>
+                  <li>data 1</li>
+                  <li>data 2</li>
+                  <li>data 3</li>
+                  <li>data 4</li>
+                </ul>
+              )}
+            </div>
+          )
+        })}
       </div>
     </Fragment>
   )
-}
+})
 
 export default Timeline

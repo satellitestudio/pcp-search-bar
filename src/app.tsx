@@ -3,6 +3,7 @@ import Home from './pages/home/home'
 import Search from './pages/search/search'
 import HistorySroll from './pages/history-scroll/history-scroll'
 import MapNavigation from './pages/map-navigation/map-navigation'
+import MapScrolling from './pages/history-map-connected/history-map-connected'
 import { Router } from '@reach/router'
 
 const App: React.FC = (): React.ReactElement => {
@@ -12,6 +13,7 @@ const App: React.FC = (): React.ReactElement => {
       <Search path={`${process.env.PUBLIC_URL}/search`} />
       <HistorySroll path={`${process.env.PUBLIC_URL}/scrolling`} />
       <MapNavigation path={`${process.env.PUBLIC_URL}/map-navigation`} />
+      <MapScrolling path={`${process.env.PUBLIC_URL}/map-scrolling`} />
     </Router>
   )
 }

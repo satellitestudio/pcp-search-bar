@@ -1,8 +1,6 @@
 body {
   --top-height: 60px;
-  --map-width: 300px;
-  /* scroll-snap-type: y mandatory; */
-  scroll-padding: var(--top-height);
+  --map-width: 30%;
 }
 
 .button {
@@ -10,47 +8,70 @@ body {
   z-index: 2;
 }
 
-div {
-  /* border: 1px solid #ddd; */
-}
-
 .top {
   position: fixed;
   width: 100%;
   height: var(--top-height);
   background-color: #aaa;
-  z-index: 1;
+  z-index: 11;
 }
 
 .map {
   position: fixed;
   top: var(--top-height);
   right: 0;
-  width: var(--map-width);
+  left: calc(100% - var(--map-width));
   height: calc(100vh - var(--top-height));
   background-color: #ddd;
 }
 
 .page {
+  padding-top: var(--top-height);
   position: absolute;
-  top: var(--top-height);
   width: calc(100vw - var(--map-width));
   display: grid;
   grid-template-rows: [profile] auto [events] auto;
   grid-template-columns: [timeline] 40px [detail] auto;
   grid-template-areas:
-    "profile profile"
+    "timeline profile"
     "timeline detail"
 }
 
 .profile {
   grid-area: profile;
   padding: 10px;
-  scroll-snap-align: start;
+  min-height: 50vh;
 }
 
-.profile img {
-  height: 400px;
+.profile button {
+  opacity: 0;
+}
+
+.profileHeader {
+  display: flex;
+  justify-content: space-between;
+}
+
+.profile h2 {
+  margin: 0;
+  padding: 1rem;
+  font-size: 20px;
+  min-height: 55px;
+  display: flex;
+  align-items: center;
+}
+
+.profileSticky .profileHeader {
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+}
+
+.profileSticky h2 {
+  font-size: 15px;
+}
+
+.profileSticky button {
+  opacity: 1;
 }
 
 .timeline {
@@ -58,7 +79,7 @@ div {
   position: sticky;
   height: calc(100vh - var(--top-height));
   top: var(--top-height);
-  background-color: #ccc;
+  /* background-color: #ccc; */
 }
 
 .timeline svg {
@@ -72,11 +93,11 @@ div {
 }
 
 .timeline .rfmosColumn {
-  transform: translateX(5px);
+  /* transform: translateX(5px); */
 }
 
 .timeline .eventsColumn {
-  transform: translateX(20px);
+  transform: translateX(15px);
 }
 
 .timeline rect {
@@ -86,14 +107,16 @@ div {
 }
 
 .timeline .rfmosColumn rect {
-  fill: gray
+  fill: gray;
+  stroke-width: 3px;
+  stroke: white;
 }
 
 .timeline .eventsColumn rect {
-  fill: red
+  fill: red;
 }
 
-.timeline rect.highlighted {
+.timeline .eventsColumn rect.highlighted {
   stroke: black;
   fill: white;
   fill-opacity: 1;
@@ -106,23 +129,17 @@ div {
 
 .event {
   position: relative;
-  margin-left: 100px;
-  height: 90px;
+  margin: 20px 0 20px 100px;
   border: 1px solid #ddd;
-  scroll-snap-align: center;
-}
-
-.event:first-child {
-  margin-top: 200px;
 }
 
 .event:last-child {
-  margin-bottom: 100vh;
+  margin-bottom: 50vh;
 }
 
 .event.highlighted {
   font-weight: bold;
-  height: 160px;
+  height: auto;
   background-color: aquamarine;
 }
 
