@@ -6,6 +6,8 @@
   "dependencies": {
     "@globalfishingwatch/map-components": "^1.7.1",
     "@reach/router": "^1.2.1",
+    "@turf/helpers": "^6.1.4",
+    "@turf/turf": "^5.1.6",
     "@types/classnames": "^2.2.7",
     "@types/d3-scale": "^2.1.1",
     "@types/jest": "24.0.11",
