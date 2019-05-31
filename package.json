@@ -4,7 +4,7 @@
   "private": true,
   "homepage": "https://satellitestudio.github.io/pcp-prototypes",
   "dependencies": {
-    "@globalfishingwatch/map-components": "^1.7.1",
+    "@globalfishingwatch/map-components": "GlobalFishingWatch/map-components#definition-types-dist",
     "@reach/router": "^1.2.1",
     "@turf/helpers": "^6.1.4",
     "@turf/turf": "^5.1.6",
