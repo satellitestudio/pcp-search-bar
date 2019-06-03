@@ -7,7 +7,6 @@ import data from 'data/events-history'
 import MapNavigation from 'components/map/map'
 import track from 'data/track'
 
-console.log('TCL: data', data)
 interface DataType {
   event?: any
   rfmo?: any
