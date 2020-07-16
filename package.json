@@ -25,7 +25,7 @@
     "d3-scale": "^3.0.0",
     "dayjs": "^1.8.14",
     "downshift": "^3.2.7",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.19",
     "match-sorter": "^3.0.0",
     "memoize-one": "^5.0.4",
     "ola": "^1.1.0",
